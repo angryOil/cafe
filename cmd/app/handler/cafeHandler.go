@@ -136,7 +136,7 @@ func (h CafeHandler) updateCafe(w http.ResponseWriter, r *http.Request) {
 
 	err = h.c.Update(r.Context(), dto, id)
 	if err != nil {
-		if strings.Contains(err.Error(), "invalid user") || strings.Contains(err.Error(), "empty") || strings.Contains(err.Error(), "zero") {
+		if strings.Contains(err.Error(), "invalid user") || strings.Contains(err.Error(), "empty") || strings.Contains(err.Error(), "zero") || strings.Contains(err.Error(), "not exists") {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
