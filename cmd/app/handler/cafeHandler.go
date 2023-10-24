@@ -117,5 +117,31 @@ func (h CafeHandler) getDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h CafeHandler) updateCafe(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return
+	}
+	var dto req.UpdateCafeDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.c.Update(r.Context(), dto, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid user") || strings.Contains(err.Error(), "empty") || strings.Contains(err.Error(), "zero") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 }

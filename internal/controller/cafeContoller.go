@@ -43,3 +43,16 @@ func (c CafeController) GetDetail(ctx context.Context, id int) (res.CafeDetailDt
 	}
 	return res.ToDetailDto(result), err
 }
+
+func (c CafeController) Update(ctx context.Context, dto req.UpdateCafeDto, cafeId int) error {
+	userId, ok := ctx.Value("userId").(int)
+	if !ok {
+		return errors.New("invalid user id")
+	}
+	reqDomain, err := dto.ToDomain(userId, cafeId)
+	if err != nil {
+		return err
+	}
+	err = c.s.Update(ctx, reqDomain)
+	return err
+}

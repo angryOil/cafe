@@ -24,6 +24,23 @@ func (c CreateCafeDto) ToDomain(userId int) (domain.Cafe, error) {
 	}, nil
 }
 
+type UpdateCafeDto struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+func (c UpdateCafeDto) ToDomain(userId, cafeId int) (domain.Cafe, error) {
+	if c.Name == "" {
+		return domain.Cafe{}, errors.New("name is empty")
+	}
+	return domain.Cafe{
+		Id:          cafeId,
+		Name:        c.Name,
+		OwnerId:     userId,
+		Description: c.Description,
+	}, nil
+}
+
 func validateCreateCafe(name string, ownerId int) error {
 	if name == "" {
 		return errors.New("name is empty")
