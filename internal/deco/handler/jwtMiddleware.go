@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -13,9 +14,9 @@ type user struct {
 	UserID int `json:"user_id"`
 }
 
-func AuthMiddleware(w http.ResponseWriter, r *http.Request, h http.Handler) {
+func JwtMiddleware(w http.ResponseWriter, r *http.Request, h http.Handler) {
 	token := r.Header.Get("token")
-	fmt.Println("token?", token)
+	log.Println("token?", token)
 	if !tokenCheck(token) {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Invalid token"))
