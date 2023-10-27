@@ -1,12 +1,14 @@
 package member
 
 import (
+	"bytes"
 	"cafe/internal/domain"
 	"cafe/internal/page"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 )
@@ -73,4 +75,35 @@ func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, r
 		return domain.IdsTotalDomain{}, errors.New("internal server error")
 	}
 	return iTD, nil
+}
+
+func (r Requester) JoinCafe(ctx context.Context, d domain.Member) error {
+	reqUrl := fmt.Sprintf("%s/%d/join/%d", memberURL, d.CafeId, d.UserId)
+	data, err := json.Marshal(d)
+	if err != nil {
+		log.Println("JoinCafe json.Marshal err: ", err)
+		return errors.New("internal server error")
+	}
+	re, err := http.NewRequest("POST", reqUrl, bytes.NewReader(data))
+	if err != nil {
+		log.Println("JoinCafe NewRequest err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("JoinCafe DefaultClient.Do err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("JoinCafe readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
 }
