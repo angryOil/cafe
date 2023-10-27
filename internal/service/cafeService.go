@@ -46,3 +46,44 @@ func (s CafeService) GetDetail(ctx context.Context, id int) (domain.Cafe, error)
 	}
 	return resuls[0], nil
 }
+
+func (s CafeService) Update(ctx context.Context, reqDomain domain.Cafe) error {
+	err := reqDomain.ValidCafeFiled()
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.Save(ctx,
+		reqDomain.OwnerId, reqDomain.Id,
+		func(results []domain.Cafe) (domain.Cafe, error) {
+			if len(results) == 0 {
+				return domain.Cafe{}, errors.New("this cafe is not exists")
+			}
+			return results[0], nil
+		},
+		func(findDomain domain.Cafe) domain.Cafe {
+			findDomain.Name = reqDomain.Name
+			findDomain.Description = reqDomain.Description
+			return findDomain
+		},
+		func(cafe domain.Cafe) error {
+			// error가 나올일이 없다고 생각하지만 혹시 error가 나온다면 크리티컬하기 때문에 한번더 확인
+			if cafe.Id == 0 {
+				return errors.New("cafe id is zero")
+			}
+			if cafe.OwnerId == 0 {
+				return errors.New("owner id is zero")
+			}
+			if cafe.Name == "" {
+				return errors.New("cafe name is empty")
+			}
+			return nil
+		},
+	)
+	return err
+}
+
+func (s CafeService) GetListByIds(ctx context.Context, ids []int) ([]domain.Cafe, error) {
+	cDomains, err := s.repo.GetCafesByCafeIds(ctx, ids)
+	return cDomains, err
+}

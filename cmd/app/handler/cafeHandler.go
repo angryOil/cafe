@@ -21,9 +21,7 @@ func NewCafeHandler(c controller.CafeController) http.Handler {
 	h := CafeHandler{c: c}
 	// 전체 카페를 조회
 	m.HandleFunc("/cafes", h.getList).Methods(http.MethodGet)
-	// todo 내가 가입한 카페를 조회 member api 에 내가 가입한 카페 목록 받아야함(외부 요청)
-	m.HandleFunc("/cafes/my", h.getMyCafeList).Methods(http.MethodGet)
-
+	// 카페 생성
 	m.HandleFunc("/cafes", h.createCafe).Methods(http.MethodPost)
 	m.HandleFunc("/cafes/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	m.HandleFunc("/cafes/{id:[0-9]+}", h.updateCafe).Methods(http.MethodPut)
@@ -82,12 +80,7 @@ func (h CafeHandler) getList(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
-}
-
-// member api 에 가입한 카페 조회
-func (h CafeHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
-
+	w.Write(data)
 }
 
 // todo 삭제 보단 비활성화를 시킨후 일정기간후에 삭제 되게 만들기
@@ -112,10 +105,43 @@ func (h CafeHandler) getDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	data, err := json.Marshal(detail)
+	if err != nil {
+		log.Println("getDetail json marshal err: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(data))
+	w.Write(data)
 }
 
 func (h CafeHandler) updateCafe(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err != nil {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return
+	}
+	var dto req.UpdateCafeDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.c.Update(r.Context(), dto, id)
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid user") || strings.Contains(err.Error(), "empty") || strings.Contains(err.Error(), "zero") || strings.Contains(err.Error(), "not exists") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 }
