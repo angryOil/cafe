@@ -23,6 +23,11 @@ func (s Service) GetMemberInfo(ctx context.Context, cafeId int, userId int) (dom
 	return md, err
 }
 
+func (s Service) GetCafeIdsAndTotal(ctx context.Context, userId int) (domain.IdsTotalDomain, error) {
+	id, err := s.r.GetCafeIdsAndTotalByUserId(ctx, userId)
+	return id, err
+}
+
 func NewService(r member.Requester) Service {
 	return Service{r: r}
 }

@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"cafe/internal/controller"
 	"cafe/internal/controller/member"
+	"cafe/internal/controller/res"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -11,13 +13,14 @@ import (
 )
 
 type MemberHandler struct {
-	c member.Controller
+	c      member.Controller
+	cafeCo controller.CafeController
 }
 
-func NewMemberHandler(c member.Controller) http.Handler {
+func NewMemberHandler(c member.Controller, cc controller.CafeController) http.Handler {
 	m := mux.NewRouter()
-	h := MemberHandler{c: c}
-	//  나의 카페 리스트 조회
+	h := MemberHandler{c: c, cafeCo: cc}
+	//  나의 카페 리스트 조회 (cafe_ids)
 	m.HandleFunc("/cafes/members/my", h.getMyCafeList).Methods(http.MethodGet)
 	// 해당카페 내 정보 조회
 	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/info", h.getMemberInfo).Methods(http.MethodGet)
@@ -33,7 +36,32 @@ func NewMemberHandler(c member.Controller) http.Handler {
 }
 
 func (h MemberHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
-	log.Println(r.URL.Path, "입니다")
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+
+	idsTotalDto, err := h.c.GetMyCafeIds(r.Context(), userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	cafeDtos, err := h.cafeCo.GetCafesByCafeIds(r.Context(), idsTotalDto.Ids)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	listTotalDto := res.NewListTotalDto(cafeDtos, idsTotalDto.Total)
+	data, err := json.Marshal(listTotalDto)
+	if err != nil {
+		log.Println("getMyCafeList json.Marshal err: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }
 
 func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {

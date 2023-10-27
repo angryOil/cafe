@@ -21,6 +21,25 @@ func ToMemberInfoDto(d domain.Member) MemberInfoDto {
 	}
 }
 
+type IdsTotalDto struct {
+	Ids   []int `json:"ids"`
+	Total int   `json:"total"`
+}
+
+func ToIdsTotalDto(d domain.IdsTotalDomain) IdsTotalDto {
+	return IdsTotalDto{
+		Ids:   d.Ids,
+		Total: d.Total,
+	}
+}
+
+func NewIdsTotalDto(ids []int, total int) IdsTotalDto {
+	return IdsTotalDto{
+		Ids:   ids,
+		Total: total,
+	}
+}
+
 var koreaZone, _ = time.LoadLocation("Asia/Seoul")
 
 func convertTimeToString(t time.Time) string {
