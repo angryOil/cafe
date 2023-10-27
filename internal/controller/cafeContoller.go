@@ -56,3 +56,14 @@ func (c CafeController) Update(ctx context.Context, dto req.UpdateCafeDto, cafeI
 	err = c.s.Update(ctx, reqDomain)
 	return err
 }
+
+func (c CafeController) GetCafesByCafeIds(ctx context.Context, ids []int) ([]res.CafeListDto, error) {
+	if len(ids) == 0 {
+		return []res.CafeListDto{}, nil
+	}
+	cDomains, err := c.s.GetListByIds(ctx, ids)
+	if err != nil {
+		return []res.CafeListDto{}, err
+	}
+	return res.ToListDtoList(cDomains), nil
+}

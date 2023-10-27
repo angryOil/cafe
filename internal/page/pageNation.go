@@ -38,7 +38,6 @@ type Pagination[T any] struct {
 // page 는 0번째 page 부터 시작합니다.
 
 func GetPagination[T any](contents []T, rp ReqPage, totalCount int) Pagination[T] {
-
 	return Pagination[T]{
 		Contents:    contents,
 		Total:       totalCount,

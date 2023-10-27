@@ -82,3 +82,8 @@ func (s CafeService) Update(ctx context.Context, reqDomain domain.Cafe) error {
 	)
 	return err
 }
+
+func (s CafeService) GetListByIds(ctx context.Context, ids []int) ([]domain.Cafe, error) {
+	cDomains, err := s.repo.GetCafesByCafeIds(ctx, ids)
+	return cDomains, err
+}

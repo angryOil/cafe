@@ -31,10 +31,13 @@ func main() {
 	http.ListenAndServe(":8083", wrappedRouter)
 }
 
+var cafeController = controller.NewCafeController(service.NewService(repository.NewRepository(infla.NewDB())))
+var memberController = member.NewController(member2.NewService(member3.NewRequester()))
+
 func getMemberHandler() http.Handler {
-	return handler.NewMemberHandler(member.NewController(member2.NewService(member3.NewRequester())))
+	return handler.NewMemberHandler(memberController, cafeController)
 }
 
 func getCafeHandler() http.Handler {
-	return handler.NewCafeHandler(controller.NewCafeController(service.NewService(repository.NewRepository(infla.NewDB()))))
+	return handler.NewCafeHandler(cafeController)
 }

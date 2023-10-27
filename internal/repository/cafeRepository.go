@@ -82,3 +82,13 @@ func (r CafeRepository) Save(
 	err = tx.Commit()
 	return err
 }
+
+func (r CafeRepository) GetCafesByCafeIds(ctx context.Context, ids []int) ([]domain.Cafe, error) {
+	var cModels []model.Cafe
+	err := r.db.NewSelect().Model(&cModels).Where("id in (?)", bun.In(ids)).Scan(ctx)
+	if err != nil {
+		log.Println("GetCafesByCafeIds Scan err: ", err)
+		return []domain.Cafe{}, errors.New("internal server error")
+	}
+	return model.ToDomainDetailList(cModels), nil
+}

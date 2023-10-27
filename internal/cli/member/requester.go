@@ -49,3 +49,27 @@ func (r Requester) GetCafeMyInfo(ctx context.Context, cafeId, userId int) (domai
 	}
 	return md, nil
 }
+
+func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int) (domain.IdsTotalDomain, error) {
+	reqUrl := fmt.Sprintf("%s/list/%d", memberURL, userId)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetCafeIdsAndTotalByUserId NewRequest err: ", err)
+		return domain.IdsTotalDomain{}, errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetCafeIdsAndTotalByUserId DefaultClient.Do err: ", err)
+		return domain.IdsTotalDomain{}, errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	var iTD domain.IdsTotalDomain
+	err = json.NewDecoder(resp.Body).Decode(&iTD)
+	if err != nil {
+		log.Println("GetCafeIdsAndTotalByUserId json.decode err: ", err)
+		return domain.IdsTotalDomain{}, errors.New("internal server error")
+	}
+	return iTD, nil
+}

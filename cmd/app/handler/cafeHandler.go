@@ -21,8 +21,6 @@ func NewCafeHandler(c controller.CafeController) http.Handler {
 	h := CafeHandler{c: c}
 	// 전체 카페를 조회
 	m.HandleFunc("/cafes", h.getList).Methods(http.MethodGet)
-	// todo 내가 가입한 카페를 조회 member api 에 내가 가입한 카페 목록 받아야함(외부 요청)
-	m.HandleFunc("/cafes/my", h.getMyCafeList).Methods(http.MethodGet)
 	// 카페 생성
 	m.HandleFunc("/cafes", h.createCafe).Methods(http.MethodPost)
 	m.HandleFunc("/cafes/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
@@ -83,11 +81,6 @@ func (h CafeHandler) getList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
-}
-
-// member api 에 가입한 카페 조회
-func (h CafeHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
-
 }
 
 // todo 삭제 보단 비활성화를 시킨후 일정기간후에 삭제 되게 만들기
