@@ -2,6 +2,7 @@ package member
 
 import (
 	"cafe/internal/domain"
+	"cafe/internal/page"
 	"context"
 	"encoding/json"
 	"errors"
@@ -50,8 +51,8 @@ func (r Requester) GetCafeMyInfo(ctx context.Context, cafeId, userId int) (domai
 	return md, nil
 }
 
-func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int) (domain.IdsTotalDomain, error) {
-	reqUrl := fmt.Sprintf("%s/list/%d", memberURL, userId)
+func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, reqPage page.ReqPage) (domain.IdsTotalDomain, error) {
+	reqUrl := fmt.Sprintf("%s/list/%d?page=%d&size=%d", memberURL, userId, reqPage.Page, reqPage.Size)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetCafeIdsAndTotalByUserId NewRequest err: ", err)

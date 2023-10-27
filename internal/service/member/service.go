@@ -3,6 +3,7 @@ package member
 import (
 	"cafe/internal/cli/member"
 	"cafe/internal/domain"
+	"cafe/internal/page"
 	"context"
 	"errors"
 )
@@ -23,8 +24,8 @@ func (s Service) GetMemberInfo(ctx context.Context, cafeId int, userId int) (dom
 	return md, err
 }
 
-func (s Service) GetCafeIdsAndTotal(ctx context.Context, userId int) (domain.IdsTotalDomain, error) {
-	id, err := s.r.GetCafeIdsAndTotalByUserId(ctx, userId)
+func (s Service) GetCafeIdsAndTotal(ctx context.Context, userId int, reqPage page.ReqPage) (domain.IdsTotalDomain, error) {
+	id, err := s.r.GetCafeIdsAndTotalByUserId(ctx, userId, reqPage)
 	return id, err
 }
 
