@@ -3,7 +3,6 @@ package handler
 import (
 	"cafe/internal/controller"
 	"cafe/internal/controller/member"
-	"cafe/internal/controller/member/req"
 	"cafe/internal/controller/res"
 	page2 "cafe/internal/page"
 	"encoding/json"
@@ -27,7 +26,7 @@ func NewMemberHandler(c member.Controller, cc controller.CafeController) http.Ha
 	// 해당카페 내 정보 조회
 	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/info", h.getMemberInfo).Methods(http.MethodGet)
 	// 카페 가입 신청
-	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/join", h.joinCafe).Methods(http.MethodPost)
+	//m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/join", h.getMemberInfo).Methods(http.MethodPost)
 
 	// 관리자
 	// 카페 가입 멤버리스트 조회
@@ -76,6 +75,7 @@ func (h MemberHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {
+	log.Println("member info")
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
@@ -110,54 +110,6 @@ func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
-
-func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	cafeId, err := strconv.Atoi(vars["cafeId"])
-	if err != nil {
-		http.Error(w, "invalid cafe id ", http.StatusBadRequest)
-		return
-	}
-	userId, ok := r.Context().Value("userId").(int)
-	if !ok {
-		http.Error(w, "invalid user id ", http.StatusBadRequest)
-		return
-	}
-
-	var dto req.JoinMemberDto
-	err = json.NewDecoder(r.Body).Decode(&dto)
-	if err != nil {
-		log.Println("joinCafe json.NewDecoder err: ", err)
-		http.Error(w, "server internal error", http.StatusInternalServerError)
-		return
-	}
-
-	if dto.Nickname == "" {
-		http.Error(w, "nickname is empty", http.StatusBadRequest)
-		return
-	}
-
-	err = h.c.JoinCafe(r.Context(), userId, cafeId, dto)
-	if err != nil {
-		if strings.Contains(err.Error(), "empty") {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if strings.Contains(err.Error(), "duplicate") {
-			http.Error(w, err.Error(), http.StatusConflict)
-			return
-		}
-		if strings.Contains(err.Error(), "json ") {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusCreated)
-}
-
-// 아래부턴 admin 기능
 
 func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 

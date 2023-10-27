@@ -29,11 +29,6 @@ func (s Service) GetCafeIdsAndTotal(ctx context.Context, userId int, reqPage pag
 	return id, err
 }
 
-func (s Service) JoinCafe(ctx context.Context, d domain.Member) error {
-	err := s.r.JoinCafe(ctx, d)
-	return err
-}
-
 func NewService(r member.Requester) Service {
 	return Service{r: r}
 }
