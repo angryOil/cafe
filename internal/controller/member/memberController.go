@@ -2,6 +2,7 @@ package member
 
 import (
 	"cafe/internal/controller/member/res"
+	"cafe/internal/page"
 	"cafe/internal/service/member"
 	"context"
 )
@@ -22,8 +23,8 @@ func (c Controller) GetMemberInfo(ctx context.Context, cafeId int, userId int) (
 	return res.ToMemberInfoDto(md), err
 }
 
-func (c Controller) GetMyCafeIds(ctx context.Context, userId int) (res.IdsTotalDto, error) {
-	iTDto, err := c.s.GetCafeIdsAndTotal(ctx, userId)
+func (c Controller) GetMyCafeIds(ctx context.Context, userId int, reqPage page.ReqPage) (res.IdsTotalDto, error) {
+	iTDto, err := c.s.GetCafeIdsAndTotal(ctx, userId, reqPage)
 	if err != nil {
 		return res.IdsTotalDto{}, err
 	}

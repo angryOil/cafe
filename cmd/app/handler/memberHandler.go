@@ -4,6 +4,7 @@ import (
 	"cafe/internal/controller"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/res"
+	page2 "cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -42,11 +43,20 @@ func (h MemberHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	idsTotalDto, err := h.c.GetMyCafeIds(r.Context(), userId)
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		page = 0
+	}
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		size = 0
+	}
+	idsTotalDto, err := h.c.GetMyCafeIds(r.Context(), userId, page2.NewReqPage(page, size))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	cafeDtos, err := h.cafeCo.GetCafesByCafeIds(r.Context(), idsTotalDto.Ids)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
