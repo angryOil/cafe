@@ -92,3 +92,12 @@ func (r CafeRepository) GetCafesByCafeIds(ctx context.Context, ids []int) ([]dom
 	}
 	return model.ToDomainDetailList(cModels), nil
 }
+
+func (r CafeRepository) IsExistsByUserIdCafeId(ctx context.Context, userId int, cafeId int) (bool, error) {
+	ok, err := r.db.NewSelect().Model((*model.Cafe)(nil)).Where("owner_id = ? and id = ?", userId, cafeId).Exists(ctx)
+	if err != nil {
+		log.Println("IsExistsByUserIdCafeId err: ", err)
+		return false, errors.New("internal server error")
+	}
+	return ok, nil
+}

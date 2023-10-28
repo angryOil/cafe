@@ -38,3 +38,12 @@ func (c Controller) JoinCafe(ctx context.Context, userId, cafeId int, dto req.Jo
 	err := c.s.JoinCafe(ctx, d)
 	return err
 }
+
+func (c Controller) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanned bool, reqPage page.ReqPage) ([]res.MemberInfoDto, int, error) {
+	domainListCount, err := c.s.GetCafeMemberListCount(ctx, cafeId, isBanned, reqPage)
+	if err != nil {
+		return []res.MemberInfoDto{}, 0, err
+	}
+	dtoList := res.ToMemberInfoDtoList(domainListCount.Members)
+	return dtoList, domainListCount.Count, nil
+}
