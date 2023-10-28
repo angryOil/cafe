@@ -21,6 +21,14 @@ func ToMemberInfoDto(d domain.Member) MemberInfoDto {
 	}
 }
 
+func ToMemberInfoDtoList(domains []domain.Member) []MemberInfoDto {
+	results := make([]MemberInfoDto, len(domains))
+	for i, d := range domains {
+		results[i] = ToMemberInfoDto(d)
+	}
+	return results
+}
+
 type IdsTotalDto struct {
 	Ids   []int `json:"ids"`
 	Total int   `json:"total"`

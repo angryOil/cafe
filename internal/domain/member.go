@@ -10,3 +10,8 @@ type Member struct {
 	IsBanned  bool      `json:"is_banned,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 }
+
+type MemberListCount struct {
+	Members []Member `json:"members"`
+	Count   int      `json:"count"`
+}

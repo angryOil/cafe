@@ -107,3 +107,33 @@ func (r Requester) JoinCafe(ctx context.Context, d domain.Member) error {
 	}
 	return nil
 }
+
+func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanned bool, reqPage page.ReqPage) (domain.MemberListCount, error) {
+	reqUrl := fmt.Sprintf("%s/admin/%d?ban=%t&page=%d&size=%d", memberURL, cafeId, isBanned, reqPage.Page, reqPage.Size)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetCafeMemberListCount NewRequest err: ", err)
+		return domain.MemberListCount{}, errors.New("internal server err")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetCafeMemberListCount defaultClient do err: ", err)
+		return domain.MemberListCount{}, errors.New("internal server err")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != 200 {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("GetCafeMemberListCount readBody err: ", err)
+			return domain.MemberListCount{}, errors.New("internal server err")
+		}
+		return domain.MemberListCount{}, errors.New(string(readBody))
+	}
+	var listCount domain.MemberListCount
+	err = json.NewDecoder(resp.Body).Decode(&listCount)
+	if err != nil {
+		log.Println("GetCafeMemberListCount json decode err: ", err)
+	}
+	return listCount, nil
+}
