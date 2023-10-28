@@ -7,7 +7,7 @@ import (
 
 type MemberInfoDto struct {
 	Id        int    `json:"member_id,omitempty"`
-	Nickname  string `json:"nick_name,omitempty"`
+	Nickname  string `json:"nickname,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	IsBanned  bool   `json:"is_banned,omitempty"`
 }
