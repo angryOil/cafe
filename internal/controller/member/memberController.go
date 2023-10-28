@@ -47,3 +47,9 @@ func (c Controller) GetCafeMemberListCount(ctx context.Context, cafeId int, isBa
 	dtoList := res.ToMemberInfoDtoList(domainListCount.Members)
 	return dtoList, domainListCount.Count, nil
 }
+
+func (c Controller) PatchMember(ctx context.Context, userId, cafeId int, dto req.PatchMemberDto) error {
+	d := dto.ToDomain(userId, cafeId)
+	err := c.s.PatchMember(ctx, d)
+	return err
+}

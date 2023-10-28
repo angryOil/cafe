@@ -2,6 +2,7 @@ package member
 
 import (
 	"bytes"
+	dto2 "cafe/internal/cli/member/dto"
 	"cafe/internal/domain"
 	"cafe/internal/page"
 	"context"
@@ -136,4 +137,37 @@ func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBan
 		log.Println("GetCafeMemberListCount json decode err: ", err)
 	}
 	return listCount, nil
+}
+
+func (r Requester) PatchMember(ctx context.Context, d domain.Member) error {
+	reqUrl := fmt.Sprintf("%s/admin/%d", memberURL, d.CafeId)
+	dto := dto2.ToPatchDto(d)
+	data, err := json.Marshal(dto)
+	if err != nil {
+		log.Println("PatchMember json marshal err: ", err)
+		return errors.New("internal server error")
+	}
+
+	re, err := http.NewRequest("PATCH", reqUrl, bytes.NewReader(data))
+	if err != nil {
+		log.Println("PatchMember NewRequest marshal err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("PatchMember DefaultClient marshal err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("PatchMember readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
 }

@@ -199,5 +199,49 @@ func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h MemberHandler) patchMember(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id ", http.StatusBadRequest)
+		return
+	}
+
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+
+	isMine, err := h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !isMine {
+		http.Error(w, "You do not have permission", http.StatusForbidden)
+		return
+	}
+
+	var dto req.PatchMemberDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.memberCon.PatchMember(r.Context(), userId, cafeId, dto)
+	if err != nil {
+		if strings.Contains(err.Error(), "no row") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		if strings.Contains(err.Error(), "invalid") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 }
