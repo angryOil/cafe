@@ -46,4 +46,4 @@ func (s Service) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanne
 func (s Service) PatchMember(ctx context.Context, d domain.Member) error {
 	err := s.r.PatchMember(ctx, d)
 	return err
-}
+
