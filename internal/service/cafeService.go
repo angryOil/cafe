@@ -87,3 +87,8 @@ func (s CafeService) GetListByIds(ctx context.Context, ids []int) ([]domain.Cafe
 	cDomains, err := s.repo.GetCafesByCafeIds(ctx, ids)
 	return cDomains, err
 }
+
+func (s CafeService) CheckIsMine(ctx context.Context, userId int, cafeId int) (bool, error) {
+	ok, err := s.repo.IsExistsByUserIdCafeId(ctx, userId, cafeId)
+	return ok, err
+}

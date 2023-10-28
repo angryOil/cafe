@@ -67,3 +67,8 @@ func (c CafeController) GetCafesByCafeIds(ctx context.Context, ids []int) ([]res
 	}
 	return res.ToListDtoList(cDomains), nil
 }
+
+func (c CafeController) CheckIsMine(ctx context.Context, userId int, cafeId int) (bool, error) {
+	isMine, err := c.s.CheckIsMine(ctx, userId, cafeId)
+	return isMine, err
+}

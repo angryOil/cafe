@@ -7,7 +7,7 @@ import (
 
 type MemberInfoDto struct {
 	Id        int    `json:"member_id,omitempty"`
-	Nickname  string `json:"nick_name,omitempty"`
+	Nickname  string `json:"nickname,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
 	IsBanned  bool   `json:"is_banned,omitempty"`
 }
@@ -19,6 +19,14 @@ func ToMemberInfoDto(d domain.Member) MemberInfoDto {
 		CreatedAt: convertTimeToString(d.CreatedAt),
 		IsBanned:  d.IsBanned,
 	}
+}
+
+func ToMemberInfoDtoList(domains []domain.Member) []MemberInfoDto {
+	results := make([]MemberInfoDto, len(domains))
+	for i, d := range domains {
+		results[i] = ToMemberInfoDto(d)
+	}
+	return results
 }
 
 type IdsTotalDto struct {

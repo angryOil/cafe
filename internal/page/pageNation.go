@@ -1,5 +1,10 @@
 package page
 
+import (
+	"net/http"
+	"strconv"
+)
+
 var minPage = 0
 var minSize = 10
 var maxSize = 50
@@ -44,4 +49,16 @@ func GetPagination[T any](contents []T, rp ReqPage, totalCount int) Pagination[T
 		CurrentPage: rp.Page,
 		LastPage:    totalCount / rp.Size,
 	}
+}
+
+func GetPageReqByRequest(r *http.Request) ReqPage {
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil {
+		page = 0
+	}
+	size, err := strconv.Atoi(r.URL.Query().Get("size"))
+	if err != nil {
+		size = 0
+	}
+	return NewReqPage(page, size)
 }

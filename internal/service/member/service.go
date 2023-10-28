@@ -12,6 +12,10 @@ type Service struct {
 	r member.Requester
 }
 
+func NewService(r member.Requester) Service {
+	return Service{r: r}
+}
+
 func (s Service) GetMemberInfo(ctx context.Context, cafeId int, userId int) (domain.Member, error) {
 	if userId == 0 {
 		return domain.Member{}, errors.New("invalid user id")
@@ -29,6 +33,17 @@ func (s Service) GetCafeIdsAndTotal(ctx context.Context, userId int, reqPage pag
 	return id, err
 }
 
-func NewService(r member.Requester) Service {
-	return Service{r: r}
+func (s Service) JoinCafe(ctx context.Context, d domain.Member) error {
+	err := s.r.JoinCafe(ctx, d)
+	return err
 }
+
+func (s Service) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanned bool, reqPage page.ReqPage) (domain.MemberListCount, error) {
+	listCunt, err := s.r.GetCafeMemberListCount(ctx, cafeId, isBanned, reqPage)
+	return listCunt, err
+}
+
+func (s Service) PatchMember(ctx context.Context, d domain.Member) error {
+	err := s.r.PatchMember(ctx, d)
+	return err
+
