@@ -19,3 +19,19 @@ func ToBandListDtoList(domains []domain.Ban) []BanListDto {
 	}
 	return results
 }
+
+type BanDetailDto struct {
+	Id          int    `json:"id"`
+	CafeId      int    `json:"cafe_id"`
+	CafeName    string `json:"cafe_name"`
+	Description string `json:"description"`
+}
+
+func (d BanListDto) ToDetailDto(cafeName string) BanDetailDto {
+	return BanDetailDto{
+		Id:          d.Id,
+		CafeId:      d.CafeId,
+		CafeName:    cafeName,
+		Description: d.Description,
+	}
+}

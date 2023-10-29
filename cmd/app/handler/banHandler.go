@@ -4,6 +4,7 @@ import (
 	"cafe/internal/controller"
 	"cafe/internal/controller/ban"
 	"cafe/internal/controller/ban/req"
+	res2 "cafe/internal/controller/ban/res"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/res"
 	page2 "cafe/internal/page"
@@ -101,6 +102,7 @@ func (h BanHandler) createBan(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// todo 리펙토링 하기
 func (h BanHandler) getBanListByUserId(w http.ResponseWriter, r *http.Request) {
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
@@ -108,14 +110,49 @@ func (h BanHandler) getBanListByUserId(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	reqPage := page2.GetPageReqByRequest(r)
-	list, count, err := h.banCon.GetMyBanListAndCount(r.Context(), userId, reqPage)
+	banListDtos, count, err := h.banCon.GetMyBanListAndCount(r.Context(), userId, reqPage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// 탐색용 cafeIds arr
+	cafeIds := make([]int, len(banListDtos))
+	for i, d := range banListDtos {
+		cafeIds[i] = d.CafeId
+	}
+
+	cafeNameDtos, err := h.cafeCon.GetCafesByCafeIds(r.Context(), cafeIds)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	listTotalDto := res.NewListTotalDto(list, count)
-	data, err := json.Marshal(listTotalDto)
+	cafeNameMap := make(map[int]string, len(cafeNameDtos))
+	for _, cN := range cafeNameDtos {
+		cafeNameMap[cN.Id] = cN.Name
+	}
+
+	banListDtoMap := make(map[int]res2.BanListDto, len(banListDtos))
+	for _, d := range banListDtos {
+		banListDtoMap[d.CafeId] = d
+	}
+
+	detailListMap := make(map[int]res2.BanDetailDto, len(banListDtos))
+
+	for i, b := range banListDtoMap {
+		name, ok := cafeNameMap[i]
+		if !ok {
+			name = ""
+		}
+		detailListMap[i] = b.ToDetailDto(name)
+	}
+	detailList := make([]res2.BanDetailDto, 0)
+	for _, m := range detailListMap {
+		detailList = append(detailList, m)
+	}
+	listCountDto := res.NewListTotalDto(detailList, count)
+	data, err := json.Marshal(listCountDto)
+
 	if err != nil {
 		log.Println("getBanListByUserId json.Marshal err: ", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
