@@ -11,3 +11,5 @@ CREATE TABLE "public"."ban"
     description varchar(2000),
     created_at  timestamptz
 );
+
+create unique index ban_user_id_cafe_id_unique on ban (user_id, cafe_id)

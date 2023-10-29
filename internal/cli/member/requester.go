@@ -173,3 +173,28 @@ func (r Requester) PatchMember(ctx context.Context, d domain.Member) error {
 	}
 	return nil
 }
+
+func (r Requester) GetMemberByCafeMemberId(ctx context.Context, cafeId int, memberId int) (domain.Member, error) {
+	reqUrl := fmt.Sprintf("%s/admin/%d/%d", memberURL, cafeId, memberId)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetMemberByCafeMemberId NewRequest err: ", err)
+		return domain.Member{}, errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetMemberByCafeMemberId DefaultClient.Do err: ", err)
+		return domain.Member{}, errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	var dto dto2.MemberInfoDto
+	err = json.NewDecoder(resp.Body).Decode(&dto)
+	if err != nil {
+		log.Println("GetMemberByCafeMemberId json.NewDecoder err err: ", err)
+		return domain.Member{}, errors.New("internal server error")
+	}
+	mDomain := dto.ToDomain()
+	return mDomain, nil
+}
