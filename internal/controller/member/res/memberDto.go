@@ -7,17 +7,17 @@ import (
 
 type MemberInfoDto struct {
 	Id        int    `json:"member_id,omitempty"`
+	UserId    int    `json:"user_id"`
 	Nickname  string `json:"nickname,omitempty"`
 	CreatedAt string `json:"created_at,omitempty"`
-	IsBanned  bool   `json:"is_banned,omitempty"`
 }
 
 func ToMemberInfoDto(d domain.Member) MemberInfoDto {
 	return MemberInfoDto{
 		Id:        d.Id,
+		UserId:    d.UserId,
 		Nickname:  d.Nickname,
 		CreatedAt: convertTimeToString(d.CreatedAt),
-		IsBanned:  d.IsBanned,
 	}
 }
 

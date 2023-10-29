@@ -47,3 +47,11 @@ func (s Service) PatchMember(ctx context.Context, d domain.Member) error {
 	err := s.r.PatchMember(ctx, d)
 	return err
 }
+
+func (s Service) GetMemberInfoByCafeMemberId(ctx context.Context, cafeId int, memberId int) (domain.Member, error) {
+	if memberId == 0 {
+		return domain.Member{}, errors.New("invalid member id")
+	}
+	mDomain, err := s.r.GetMemberByCafeMemberId(ctx, cafeId, memberId)
+	return mDomain, err
+}
