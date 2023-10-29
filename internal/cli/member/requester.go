@@ -80,11 +80,13 @@ func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, r
 
 func (r Requester) JoinCafe(ctx context.Context, d domain.Member) error {
 	reqUrl := fmt.Sprintf("%s/%d/join/%d", memberURL, d.CafeId, d.UserId)
-	data, err := json.Marshal(d)
+	jd := dto2.ToJoinMemberDto(d)
+	data, err := json.Marshal(jd)
 	if err != nil {
 		log.Println("JoinCafe json.Marshal err: ", err)
 		return errors.New("internal server error")
 	}
+
 	re, err := http.NewRequest("POST", reqUrl, bytes.NewReader(data))
 	if err != nil {
 		log.Println("JoinCafe NewRequest err: ", err)
