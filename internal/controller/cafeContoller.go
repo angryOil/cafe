@@ -72,3 +72,8 @@ func (c CafeController) CheckIsMine(ctx context.Context, userId int, cafeId int)
 	isMine, err := c.s.CheckIsMine(ctx, userId, cafeId)
 	return isMine, err
 }
+
+func (c CafeController) IsExistsCafe(ctx context.Context, cafeId int) (bool, error) {
+	ok, err := c.s.IsExistsCafe(ctx, cafeId)
+	return ok, err
+}

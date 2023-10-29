@@ -101,3 +101,12 @@ func (r CafeRepository) IsExistsByUserIdCafeId(ctx context.Context, userId int, 
 	}
 	return ok, nil
 }
+
+func (r CafeRepository) IsExistsByCafeId(ctx context.Context, cafeId int) (bool, error) {
+	ok, err := r.db.NewSelect().Model((*model.Cafe)(nil)).Where("id = ?", cafeId).Exists(ctx)
+	if err != nil {
+		log.Println("IsExistsByCafeId select err: ", err)
+		return false, errors.New("internal server error")
+	}
+	return ok, nil
+}

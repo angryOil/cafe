@@ -117,6 +117,16 @@ func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ok, err = h.cafeCon.IsExistsCafe(r.Context(), cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "cafe not exists", http.StatusNotFound)
+		return
+	}
+
 	var dto req.JoinMemberDto
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
