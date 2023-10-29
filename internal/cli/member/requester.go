@@ -142,7 +142,7 @@ func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBan
 }
 
 func (r Requester) PatchMember(ctx context.Context, d domain.Member) error {
-	reqUrl := fmt.Sprintf("%s/admin/%d", memberURL, d.CafeId)
+	reqUrl := fmt.Sprintf("%s/%d/modify/%d", memberURL, d.CafeId, d.UserId)
 	dto := dto2.ToPatchDto(d)
 	data, err := json.Marshal(dto)
 	if err != nil {

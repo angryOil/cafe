@@ -5,14 +5,12 @@ import (
 )
 
 type PatchDto struct {
-	MemberId int  `json:"member_id"`
-	IsBanned bool `json:"is_banned"`
+	Nickname string `json:"nickname"`
 }
 
 func ToPatchDto(d domain.Member) PatchDto {
 	return PatchDto{
-		MemberId: d.Id,
-		IsBanned: d.IsBanned,
+		Nickname: d.Nickname,
 	}
 }
 
