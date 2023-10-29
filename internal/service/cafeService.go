@@ -92,3 +92,8 @@ func (s CafeService) CheckIsMine(ctx context.Context, userId int, cafeId int) (b
 	ok, err := s.repo.IsExistsByUserIdCafeId(ctx, userId, cafeId)
 	return ok, err
 }
+
+func (s CafeService) IsExistsCafe(ctx context.Context, cafeId int) (bool, error) {
+	ok, err := s.repo.IsExistsByCafeId(ctx, cafeId)
+	return ok, err
+}

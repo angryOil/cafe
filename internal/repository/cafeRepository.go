@@ -26,12 +26,12 @@ func (r CafeRepository) Create(ctx context.Context, cd domain.Cafe) error {
 
 func (r CafeRepository) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]domain.Cafe, int, error) {
 	var list []model.CateList
-	err := r.db.NewSelect().Model(&list).Limit(reqPage.Size).Offset(reqPage.Offset).Order("id desc").Scan(ctx)
+	count, err := r.db.NewSelect().Model(&list).Limit(reqPage.Size).Offset(reqPage.Offset).ScanAndCount(ctx)
 	if err != nil {
-		return []domain.Cafe{}, 0, err
+		log.Println("GetCafes ScanAndCount err: ", err)
+		return []domain.Cafe{}, 0, errors.New("internal server error")
 	}
-	count, err := r.db.NewSelect().Model(&list).Count(ctx)
-	return model.ToDomainList(list), count, err
+	return model.ToDomainList(list), count, nil
 }
 
 func (r CafeRepository) GetDetail(ctx context.Context, id int) ([]domain.Cafe, error) {
@@ -97,6 +97,15 @@ func (r CafeRepository) IsExistsByUserIdCafeId(ctx context.Context, userId int, 
 	ok, err := r.db.NewSelect().Model((*model.Cafe)(nil)).Where("owner_id = ? and id = ?", userId, cafeId).Exists(ctx)
 	if err != nil {
 		log.Println("IsExistsByUserIdCafeId err: ", err)
+		return false, errors.New("internal server error")
+	}
+	return ok, nil
+}
+
+func (r CafeRepository) IsExistsByCafeId(ctx context.Context, cafeId int) (bool, error) {
+	ok, err := r.db.NewSelect().Model((*model.Cafe)(nil)).Where("id = ?", cafeId).Exists(ctx)
+	if err != nil {
+		log.Println("IsExistsByCafeId select err: ", err)
 		return false, errors.New("internal server error")
 	}
 	return ok, nil

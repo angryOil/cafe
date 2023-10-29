@@ -1,6 +1,7 @@
 package member
 
 import (
+	"cafe/internal/controller/member/req"
 	"cafe/internal/controller/member/res"
 	"cafe/internal/page"
 	"cafe/internal/service/member"
