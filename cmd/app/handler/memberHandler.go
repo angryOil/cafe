@@ -29,10 +29,12 @@ func NewMemberHandler(c member.Controller, cc controller.CafeController) http.Ha
 	// 카페 가입 신청
 	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/join", h.joinCafe).Methods(http.MethodPost)
 
+	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members", h.patchMember).Methods(http.MethodPatch)
+
 	// 관리자
 	// 카페 가입 멤버리스트 조회 현재로선 cafe 주인인지 확인 하고 요청
 	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/admin", h.getMemberList).Methods(http.MethodGet)
-	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/admin", h.patchMember).Methods(http.MethodPatch)
+	//m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/admin", h.adminPatchMember).Methods(http.MethodPatch)
 
 	return m
 }
@@ -248,6 +250,10 @@ func (h MemberHandler) patchMember(w http.ResponseWriter, r *http.Request) {
 		}
 		if strings.Contains(err.Error(), "invalid") {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(err.Error(), "duplicate") {
+			http.Error(w, err.Error(), http.StatusConflict)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
