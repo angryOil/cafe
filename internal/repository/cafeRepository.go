@@ -26,12 +26,12 @@ func (r CafeRepository) Create(ctx context.Context, cd domain.Cafe) error {
 
 func (r CafeRepository) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]domain.Cafe, int, error) {
 	var list []model.CateList
-	err := r.db.NewSelect().Model(&list).Limit(reqPage.Size).Offset(reqPage.Offset).Order("id desc").Scan(ctx)
+	count, err := r.db.NewSelect().Model(&list).Limit(reqPage.Size).Offset(reqPage.Offset).ScanAndCount(ctx)
 	if err != nil {
-		return []domain.Cafe{}, 0, err
+		log.Println("GetCafes ScanAndCount err: ", err)
+		return []domain.Cafe{}, 0, errors.New("internal server error")
 	}
-	count, err := r.db.NewSelect().Model(&list).Count(ctx)
-	return model.ToDomainList(list), count, err
+	return model.ToDomainList(list), count, nil
 }
 
 func (r CafeRepository) GetDetail(ctx context.Context, id int) ([]domain.Cafe, error) {
