@@ -5,6 +5,8 @@ import (
 	"cafe/internal/controller/ban"
 	"cafe/internal/controller/ban/req"
 	"cafe/internal/controller/member"
+	"cafe/internal/controller/res"
+	page2 "cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -19,9 +21,6 @@ type BanHandler struct {
 	banCon    ban.Controller
 }
 
-// 밴
-// 1.밴하기 : 권한체크 cafeCon 에서 카페주인인지 확인 memberCon 에서 해당 userId_cafeId 유효한 멤버인지 확인 => 유효하면 밴처리
-
 func NewBanHandler(banCon ban.Controller, memberCon member.Controller, cafeCon controller.CafeController) http.Handler {
 	r := mux.NewRouter()
 	h := BanHandler{
@@ -29,8 +28,12 @@ func NewBanHandler(banCon ban.Controller, memberCon member.Controller, cafeCon c
 		banCon:    banCon,
 		memberCon: memberCon,
 	}
-	// 밴하기
+	// 나의 카페 밴 확인
+	r.HandleFunc("/cafes/ban/my", h.getBanListByUserId).Methods(http.MethodGet)
+	// 밴하기 : 권한체크 cafeCon 에서 카페주인인지 확인 memberCon 에서 해당 userId_cafeId 유효한 멤버인지 확인 => 유효하면 밴처리
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/ban/admin", h.createBan).Methods(http.MethodPost)
+	// 카페 벤 리스트 확인: 권한체크(카페 주인만)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/ban/admin", h.getCafeBanListByCafeId).Methods(http.MethodGet)
 	return r
 }
 
@@ -96,4 +99,33 @@ func (h BanHandler) createBan(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h BanHandler) getBanListByUserId(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+	reqPage := page2.GetPageReqByRequest(r)
+	list, count, err := h.banCon.GetMyBanListAndCount(r.Context(), userId, reqPage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	listTotalDto := res.NewListTotalDto(list, count)
+	data, err := json.Marshal(listTotalDto)
+	if err != nil {
+		log.Println("getBanListByUserId json.Marshal err: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+}
+
+func (h BanHandler) getCafeBanListByCafeId(writer http.ResponseWriter, request *http.Request) {
+
 }
