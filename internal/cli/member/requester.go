@@ -12,10 +12,12 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // memberURL
 var memberURL = "http://localhost:8084/members"
+var adminMemberUrl = "http://localhost:8084/admin/members"
 
 type Requester struct {
 }
@@ -197,4 +199,40 @@ func (r Requester) GetMemberByCafeMemberId(ctx context.Context, cafeId int, memb
 	}
 	mDomain := dto.ToDomain()
 	return mDomain, nil
+}
+
+func (r Requester) GetMemberListByMemberIds(ctx context.Context, ids []int) ([]domain.Member, error) {
+	idsStr := arrayToString(ids, ",")
+	reqUrl := fmt.Sprintf("%s/admin?memberIds=%s", memberURL, idsStr)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetMemberListByMemberIds NewRequest err: ", err)
+		return []domain.Member{}, errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetMemberListByMemberIds DefaultClient err: ", err)
+		return []domain.Member{}, errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("GetMemberListByMemberIds readAll err: ", err)
+			return []domain.Member{}, errors.New("internal server error")
+		}
+		return []domain.Member{}, errors.New(string(readBody))
+	}
+	var list []dto2.MemberInfoDto
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	if err != nil {
+		log.Println("GetMemberListByMemberIds decode err: ", err)
+		return []domain.Member{}, errors.New("internal server error")
+	}
+	return dto2.ToMemberDomainList(list), nil
+}
+
+func arrayToString(a []int, delim string) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }

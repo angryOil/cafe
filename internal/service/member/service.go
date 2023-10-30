@@ -55,3 +55,8 @@ func (s Service) GetMemberInfoByCafeMemberId(ctx context.Context, cafeId int, me
 	mDomain, err := s.r.GetMemberByCafeMemberId(ctx, cafeId, memberId)
 	return mDomain, err
 }
+
+func (s Service) GetMemberInfoByMemberIds(ctx context.Context, ids []int) ([]domain.Member, error) {
+	domains, err := s.r.GetMemberListByMemberIds(ctx, ids)
+	return domains, err
+}

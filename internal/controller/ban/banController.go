@@ -12,6 +12,10 @@ type Controller struct {
 	s ban.Service
 }
 
+func NewController(s ban.Service) Controller {
+	return Controller{s: s}
+}
+
 func (c Controller) CreateBan(ctx context.Context, userId int, cafeId int, dto req.CreateBanDto) error {
 	bDomain := dto.ToDomain(userId, cafeId)
 	err := c.s.CreateBan(ctx, bDomain)
@@ -26,6 +30,10 @@ func (c Controller) GetMyBanListAndCount(ctx context.Context, userId int, reqPag
 	return res.ToBandListDtoList(domains), count, nil
 }
 
-func NewController(s ban.Service) Controller {
-	return Controller{s: s}
+func (c Controller) GetBanListByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]res.BanAdminListDto, int, error) {
+	domains, count, err := c.s.GetBanListByCafeId(ctx, cafeId, reqPage)
+	if err != nil {
+		return []res.BanAdminListDto{}, 0, err
+	}
+	return res.ToAdminDtoList(domains), count, nil
 }

@@ -6,6 +6,7 @@ import (
 	"cafe/internal/controller/ban/req"
 	res2 "cafe/internal/controller/ban/res"
 	"cafe/internal/controller/member"
+	res3 "cafe/internal/controller/member/res"
 	"cafe/internal/controller/res"
 	page2 "cafe/internal/page"
 	"encoding/json"
@@ -163,6 +164,86 @@ func (h BanHandler) getBanListByUserId(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
-func (h BanHandler) getCafeBanListByCafeId(writer http.ResponseWriter, request *http.Request) {
+func (h BanHandler) getCafeBanListByCafeId(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusUnauthorized)
+		return
+	}
 
+	isMine, err := h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		log.Println("getCafeBanListByCafeId CheckIsMine err: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if !isMine {
+		http.Error(w, "You do not have permission", http.StatusForbidden)
+		return
+	}
+	reqPage := page2.GetPageReqByRequest(r)
+
+	banAdminListDtos, total, err := h.banCon.GetBanListByCafeId(r.Context(), cafeId, reqPage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if len(banAdminListDtos) == 0 {
+		data, err := json.Marshal(res.NewListTotalDto([]res2.BanAdminDetailDto{}, total))
+		if err != nil {
+			log.Println("getCafeBanListByCafeId json.Marshal err: ", err)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Add("Content-Type", "application/json")
+		w.Write(data)
+		return
+	}
+	memberIds := make([]int, len(banAdminListDtos))
+	for i, b := range banAdminListDtos {
+		memberIds[i] = b.MemberId
+	}
+
+	memberDtos, err := h.memberCon.GetMembersByMemberIds(r.Context(), memberIds)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	memberDtosMap := make(map[int]res3.MemberInfoDto, len(memberDtos))
+	for _, m := range memberDtos {
+		memberDtosMap[m.Id] = m
+	}
+
+	detailMap := make(map[int]res2.BanAdminDetailDto, len(banAdminListDtos))
+	for _, b := range banAdminListDtos {
+		dto, ok := memberDtosMap[b.MemberId]
+		name := ""
+		if ok {
+			name = dto.Nickname
+		}
+		detailMap[b.MemberId] = b.ToDetailDto(name)
+	}
+
+	detailList := make([]res2.BanAdminDetailDto, 0, len(detailMap))
+	for _, d := range detailMap {
+		detailList = append(detailList, d)
+	}
+
+	totalList := res.NewListTotalDto(detailList, total)
+
+	data, err := json.Marshal(totalList)
+	if err != nil {
+		log.Println("getCafeBanListByCafeId err: ", err)
+		http.Error(w, "server internal error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
 }

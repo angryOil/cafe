@@ -35,3 +35,13 @@ func (r BanRepository) GetListCountByUserId(ctx context.Context, userId int, req
 	}
 	return model.ToBanDomainList(results), count, nil
 }
+
+func (r BanRepository) GetListCountByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]domain.Ban, int, error) {
+	var results []model.Ban
+	count, err := r.db.NewSelect().Model(&results).Where("cafe_id = ?", cafeId).Limit(reqPage.Size).Offset(reqPage.Offset).Order("id desc").ScanAndCount(ctx)
+	if err != nil {
+		log.Println("GetListCountByCafeId NewSelect err: ", err)
+		return []domain.Ban{}, 0, errors.New("internal server error")
+	}
+	return model.ToBanDomainList(results), count, nil
+}

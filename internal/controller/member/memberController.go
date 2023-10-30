@@ -61,3 +61,8 @@ func (c Controller) GetInfoByCafeMemberId(ctx context.Context, cafeId int, membe
 	}
 	return res.ToMemberInfoDto(mDomain), nil
 }
+
+func (c Controller) GetMembersByMemberIds(ctx context.Context, memberIds []int) ([]res.MemberInfoDto, error) {
+	domains, err := c.s.GetMemberInfoByMemberIds(ctx, memberIds)
+	return res.ToMemberInfoDtoList(domains), err
+}

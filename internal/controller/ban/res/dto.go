@@ -1,6 +1,8 @@
 package res
 
-import "cafe/internal/domain"
+import (
+	"cafe/internal/domain"
+)
 
 type BanListDto struct {
 	Id          int    `json:"id"`
