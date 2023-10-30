@@ -1,6 +1,7 @@
 package boardType
 
 import (
+	"cafe/internal/controller/boardType/req"
 	"cafe/internal/controller/boardType/res"
 	page2 "cafe/internal/page"
 	"cafe/internal/service/boardType"
@@ -21,4 +22,10 @@ func (c Controller) GetList(ctx context.Context, cafeId int, reqPage page2.ReqPa
 		return []res.BoardTypeDto{}, 0, err
 	}
 	return res.ToBoardTypeDtoList(domains), total, nil
+}
+
+func (c Controller) Create(ctx context.Context, cafeId, ownerId int, d req.CreateBoardTypeDto) error {
+	typeDomain := d.ToDomain(cafeId, ownerId)
+	err := c.s.Create(ctx, typeDomain)
+	return err
 }

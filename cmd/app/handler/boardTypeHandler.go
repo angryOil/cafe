@@ -3,6 +3,7 @@ package handler
 import (
 	"cafe/internal/controller"
 	"cafe/internal/controller/boardType"
+	"cafe/internal/controller/boardType/req"
 	"cafe/internal/controller/res"
 	"cafe/internal/page"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type BoardTypeHandler struct {
@@ -21,6 +23,7 @@ func NewBoardTypeHandler(typeCon boardType.Controller, cafeCon controller.CafeCo
 	r := mux.NewRouter()
 	h := BoardTypeHandler{typeCon: typeCon, cafeCon: cafeCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types", h.getBoardList).Methods(http.MethodGet)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types", h.create).Methods(http.MethodPost)
 	return r
 }
 
@@ -59,4 +62,57 @@ func (h BoardTypeHandler) getBoardList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
+}
+
+func (h BoardTypeHandler) create(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if !ok {
+		http.Error(w, "You do not have permission", http.StatusForbidden)
+		return
+	}
+
+	ownerId, err := h.cafeCon.GetOwnerId(r.Context(), cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	var d req.CreateBoardTypeDto
+	err = json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		log.Println("create json.NewDecoder err: ", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.typeCon.Create(r.Context(), cafeId, ownerId, d)
+	if err != nil {
+		if strings.Contains(err.Error(), "duplicate") {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+		if strings.Contains(err.Error(), "invalid") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }

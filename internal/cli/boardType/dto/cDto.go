@@ -29,3 +29,15 @@ func ToDomainList(list []BoardTypeCDto) []domain.BoardType {
 	}
 	return results
 }
+
+type CreateBoardTypeCDto struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+func ToCreateBoardTypeCDto(d domain.BoardType) CreateBoardTypeCDto {
+	return CreateBoardTypeCDto{
+		Name:        d.Name,
+		Description: d.Description,
+	}
+}
