@@ -73,6 +73,14 @@ func (c CafeController) CheckIsMine(ctx context.Context, userId int, cafeId int)
 	return isMine, err
 }
 
+func (c CafeController) GetOwnerId(ctx context.Context, cafeId int) (int, error) {
+	ownerDto, err := c.s.GetDetail(ctx, cafeId)
+	if err != nil {
+		return 0, err
+	}
+	return ownerDto.OwnerId, nil
+}
+
 func (c CafeController) IsExistsCafe(ctx context.Context, cafeId int) (bool, error) {
 	ok, err := c.s.IsExistsCafe(ctx, cafeId)
 	return ok, err
