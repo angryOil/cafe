@@ -30,3 +30,8 @@ func (s Service) GetBanListAndCountByUserId(ctx context.Context, userId int, req
 	domains, count, err := s.repo.GetListCountByUserId(ctx, userId, reqPage)
 	return domains, count, err
 }
+
+func (s Service) GetBanListByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]domain.Ban, int, error) {
+	domains, count, err := s.repo.GetListCountByCafeId(ctx, cafeId, reqPage)
+	return domains, count, err
+}

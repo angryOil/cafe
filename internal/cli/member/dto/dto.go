@@ -30,6 +30,30 @@ type MemberInfoDto struct {
 	CreatedAt string `json:"created_at,omitempty"`
 }
 
+func ToMemberDomainList(dtos []MemberInfoDto) []domain.Member {
+	results := make([]domain.Member, len(dtos))
+	for i, d := range dtos {
+		results[i] = domain.Member{
+			Id:       d.Id,
+			UserId:   d.UserId,
+			Nickname: d.NickName,
+		}
+	}
+	return results
+}
+
+func ToMemberInfoDtoList(domains []domain.Member) []MemberInfoDto {
+	results := make([]MemberInfoDto, len(domains))
+	for i, d := range domains {
+		results[i] = MemberInfoDto{
+			Id:       d.Id,
+			UserId:   d.UserId,
+			NickName: d.Nickname,
+		}
+	}
+	return results
+}
+
 func (dto MemberInfoDto) ToDomain() domain.Member {
 	t, err := convertToTime(dto.CreatedAt)
 	if err != nil {
