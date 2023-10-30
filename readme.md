@@ -91,9 +91,11 @@ swag init -g cmd/app/main.go
             cafe_id
             user_id 
             nickname
-            status (banned ,request , joined)
-            []roles
         }         
+        ban{
+            member_id
+            
+        }
 ```
 
 카페 생성시
