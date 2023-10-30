@@ -120,3 +120,30 @@ func (r Requester) Patch(ctx context.Context, d domain.BoardType) error {
 	}
 	return nil
 }
+
+func (r Requester) Delete(ctx context.Context, cafeId int, typeId int) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", boardTypeUrl, cafeId, typeId)
+
+	re, err := http.NewRequest("DELETE", reqUrl, nil)
+	if err != nil {
+		log.Println("delete NewRequest err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("delete DefaultClient err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("delete readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}

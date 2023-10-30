@@ -31,3 +31,8 @@ func (s Service) Patch(ctx context.Context, d domain.BoardType) error {
 	err := s.r.Patch(ctx, d)
 	return err
 }
+
+func (s Service) Delete(ctx context.Context, cafeId int, typeId int) error {
+	err := s.r.Delete(ctx, cafeId, typeId)
+	return err
+}
