@@ -41,3 +41,15 @@ func ToCreateBoardTypeCDto(d domain.BoardType) CreateBoardTypeCDto {
 		Description: d.Description,
 	}
 }
+
+type PatchBoardTypeCDto struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+func ToPatchBoardTypeCDto(d domain.BoardType) CreateBoardTypeCDto {
+	return CreateBoardTypeCDto{
+		Name:        d.Name,
+		Description: d.Description,
+	}
+}

@@ -29,3 +29,9 @@ func (c Controller) Create(ctx context.Context, cafeId, ownerId int, d req.Creat
 	err := c.s.Create(ctx, typeDomain)
 	return err
 }
+
+func (c Controller) Patch(ctx context.Context, cafeId, typeId int, d req.PatchBoardTypeDto) error {
+	tyDomain := d.ToDomain(cafeId, typeId)
+	err := c.s.Patch(ctx, tyDomain)
+	return err
+}

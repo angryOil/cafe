@@ -18,12 +18,12 @@ func (d CreateBoardTypeDto) ToDomain(cafeId, memberId int) domain.BoardType {
 	}
 }
 
-type PatchBoardDto struct {
+type PatchBoardTypeDto struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
 
-func (d PatchBoardDto) ToDomain(cafeId, typeId int) domain.BoardType {
+func (d PatchBoardTypeDto) ToDomain(cafeId, typeId int) domain.BoardType {
 	return domain.BoardType{
 		Id:          typeId,
 		CafeId:      cafeId,

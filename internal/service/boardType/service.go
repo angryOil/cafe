@@ -26,3 +26,8 @@ func (s Service) Create(ctx context.Context, typeDomain domain.BoardType) error 
 	err := s.r.Create(ctx, typeDomain)
 	return err
 }
+
+func (s Service) Patch(ctx context.Context, d domain.BoardType) error {
+	err := s.r.Patch(ctx, d)
+	return err
+}

@@ -24,6 +24,7 @@ func NewBoardTypeHandler(typeCon boardType.Controller, cafeCon controller.CafeCo
 	h := BoardTypeHandler{typeCon: typeCon, cafeCon: cafeCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types", h.getBoardList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types", h.create).Methods(http.MethodPost)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types/{typeId:[0-9]+}", h.patch).Methods(http.MethodPatch)
 	return r
 }
 
@@ -115,4 +116,51 @@ func (h BoardTypeHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h BoardTypeHandler) patch(w http.ResponseWriter, r *http.Request) {
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "You do not have permission", http.StatusForbidden)
+		return
+	}
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+	typeId, err := strconv.Atoi(vars["typeId"])
+	if err != nil {
+		http.Error(w, "invalid boardType id", http.StatusBadRequest)
+		return
+	}
+
+	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "You do not have permission", http.StatusForbidden)
+		return
+	}
+
+	var pD req.PatchBoardTypeDto
+	json.NewDecoder(r.Body).Decode(&pD)
+	err = h.typeCon.Patch(r.Context(), cafeId, typeId, pD)
+
+	if err != nil {
+		if strings.Contains(err.Error(), "invalid") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(err.Error(), "no row") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 }

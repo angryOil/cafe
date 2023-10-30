@@ -87,3 +87,36 @@ func (r Requester) Create(ctx context.Context, typeDomain domain.BoardType) erro
 	}
 	return nil
 }
+
+func (r Requester) Patch(ctx context.Context, d domain.BoardType) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", boardTypeUrl, d.CafeId, d.Id)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(dto.ToPatchBoardTypeCDto(d))
+	if err != nil {
+		log.Println("patch json.NewEncode err: ", err)
+		return errors.New("internal server error")
+	}
+
+	re, err := http.NewRequest("PATCH", reqUrl, &buf)
+	if err != nil {
+		log.Println("patch NewRequest err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("patch DefaultClient err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("patch readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
