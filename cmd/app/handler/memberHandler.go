@@ -83,7 +83,6 @@ func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid user id", http.StatusBadRequest)
 		return
 	}
-	log.Println("cafeId:", cafeId, "userId", userId)
 	dto, err := h.memberCon.GetMemberInfo(r.Context(), cafeId, userId)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid") {
