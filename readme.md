@@ -59,16 +59,31 @@ swag init -g cmd/app/main.go
         name 
         owner_id(카페 생성자_id)
         description
-        create_at
+        created_at
     }
-        Role{ // 1번은 owner로 공통으로 만들예정 ,2번은 manager로 이역시 기본으로 만들예정 
+        Member{ //  1인 같은카페 1번만 가입 가능 , 카페당 유니크한 닉네임을 가짐 
+            (uniq key:  cafe_id + nickname, user_id + cafe_id)
+            id
+            cafe_id
+            user_id 
+            nickname
+        }   
+        CafeRole{ // cafe owner 만  수정,삭제 ,추가 가능 
+                  // 카페당 같은 이름의 룰은 1개만 가능
             (uniq key: cafe_id+role_name)
             id
             cafe_id
             name
             description
         }
-        BoardType{
+            MemberRole{ // 한 유저 , 한카페 다중 권한을 가질수있습니다. 실제 멤버 cafeRole 이 저장되있는 entity  
+                (uniq key: cafe_role_id, member_id)
+                id 
+                member_id 
+                cafe_id // 해당 카페 권한 확인용
+                cafe_role_id
+            }
+        BoardType{ 
             (uniq key: cafe_id+name)
             id
             cafe_id
@@ -85,14 +100,8 @@ swag init -g cmd/app/main.go
                 U: []roles  // 업데이트 권한 없으면 수정불가능한 게시글이됩니다.
                 D: []roles // 매니저는 무조건 삭제권한을 얻습니다(관리 차원)
             }
-        Member{
-            (uniq key:  cafe_id+user_id, cafe_id+nickname)
-            id
-            cafe_id
-            user_id 
-            nickname
-        }         
-        ban{
+        ban{    // 한 유저 + 카페 당 벤은 1번만 가능 
+            (uniq key: user_id + cafe_id
             member_id
             
         }
