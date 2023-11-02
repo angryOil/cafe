@@ -60,3 +60,12 @@ func (s Service) GetMemberInfoByMemberIds(ctx context.Context, ids []int) ([]dom
 	domains, err := s.r.GetMemberListByMemberIds(ctx, ids)
 	return domains, err
 }
+
+func (s Service) CheckExistsByMemberId(ctx context.Context, cafeId, memberId int) (bool, error) {
+	d, err := s.r.GetMemberByCafeMemberId(ctx, cafeId, memberId)
+	if err != nil {
+		return false, err
+	}
+	// 제로값 인지 확인
+	return d.Id != 0, nil
+}

@@ -1,6 +1,7 @@
 package member
 
 import (
+	"fmt"
 	"github.com/stretchr/testify/assert"
 	"strconv"
 	"strings"
@@ -23,4 +24,9 @@ func TestA(t *testing.T) {
 	for i, e := range expectArr {
 		assert.Equal(t, e, intArr[i])
 	}
+	fmt.Println(arrayToString(intArr, ","))
+}
+
+func Test_arrayToString(t *testing.T) {
+
 }
