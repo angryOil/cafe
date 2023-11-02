@@ -81,7 +81,7 @@ swag init -g cmd/app/main.go
                 id 
                 member_id 
                 cafe_id // 해당 카페 권한 확인용
-                cafe_role_id
+                cafe_role_ids // int arr (string 타입 ) 
             }
         BoardType{ 
             (uniq key: cafe_id+name)
@@ -107,7 +107,3 @@ swag init -g cmd/app/main.go
         }
 ```
 
-카페 생성시
-
-    1.role (owner,manager) 자동생성
-    2.해당 카페 첫번째 member로 생성자 자동추가 + manager 권한 자동 부여 

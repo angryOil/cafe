@@ -5,11 +5,13 @@ import (
 	boardType3 "cafe/internal/cli/boardType"
 	cafeRole2 "cafe/internal/cli/cafeRole"
 	member3 "cafe/internal/cli/member"
+	memberRole3 "cafe/internal/cli/memberRole"
 	"cafe/internal/controller"
 	"cafe/internal/controller/ban"
 	"cafe/internal/controller/boardType"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/member"
+	"cafe/internal/controller/memberRole"
 	handler2 "cafe/internal/deco/handler"
 	"cafe/internal/repository"
 	"cafe/internal/repository/infla"
@@ -17,6 +19,7 @@ import (
 	ban2 "cafe/internal/service/ban"
 	boardType2 "cafe/internal/service/boardType"
 	member2 "cafe/internal/service/member"
+	memberRole2 "cafe/internal/service/memberRole"
 	"cafe/internal/service/role"
 	"github.com/gorilla/mux"
 	"net/http"
@@ -24,6 +27,10 @@ import (
 
 func main() {
 	r := mux.NewRouter()
+
+	// 멤버 룰
+	mrH := getMemberRoleHandler()
+	r.PathPrefix("/cafes/{cafeId:[0-9]+}/member-roles").Handler(mrH)
 
 	// 카페 룰
 	crH := getRoleHandler()
@@ -56,6 +63,11 @@ var banController = ban.NewController(ban2.NewService(repository.NewBanRepositor
 var cafeController = controller.NewCafeController(service.NewService(repository.NewRepository(infla.NewDB())))
 var memberController = member.NewController(member2.NewService(member3.NewRequester()))
 var roleController = cafeRole.NewController(role.NewService(cafeRole2.NewRequester()))
+var memberRoleController = memberRole.NewController(memberRole2.NewService(memberRole3.NewRequester()))
+
+func getMemberRoleHandler() http.Handler {
+	return handler.NewMemberRoleHandler(cafeController, memberController, roleController, memberRoleController)
+}
 
 func getRoleHandler() http.Handler {
 	return handler.NewCafeRoleHandler(cafeController, roleController)
