@@ -22,3 +22,11 @@ func (c Controller) GetRolesByCafeId(ctx context.Context, cafeId int, reqPage pa
 	}
 	return res.ToDetailList(domains), total, err
 }
+
+func (c Controller) GetOneMemberRoles(ctx context.Context, cafeId int, memberId int) (res.MemberRoleDto, error) {
+	d, err := c.s.GetOneMemberRoles(ctx, cafeId, memberId)
+	if err != nil {
+		return res.MemberRoleDto{}, err
+	}
+	return res.ToMemberRoleDto(d), nil
+}

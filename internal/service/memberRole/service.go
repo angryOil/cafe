@@ -19,3 +19,8 @@ func (s Service) GetRolesByCafeId(ctx context.Context, cafeId int, reqPage page2
 	domains, total, err := s.r.GetRolesByCafeId(ctx, cafeId, reqPage)
 	return domains, total, err
 }
+
+func (s Service) GetOneMemberRoles(ctx context.Context, cafeId int, memberId int) (domain.MemberRole, error) {
+	d, err := s.r.GetOneMemberRoles(ctx, cafeId, memberId)
+	return d, err
+}

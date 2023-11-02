@@ -2,6 +2,30 @@ package res
 
 import "cafe/internal/domain"
 
+type MemberRoleDto struct {
+	Id          int    `json:"id"`
+	CafeRoleIds string `json:"cafe_role_ids"`
+}
+
+type RoleArrDto struct {
+	Id    int    `json:"id"`
+	Roles []Role `json:"roles"`
+}
+
+func (m MemberRoleDto) ToRoleArrDto(roles []Role) RoleArrDto {
+	return RoleArrDto{
+		Id:    m.Id,
+		Roles: roles,
+	}
+}
+
+func ToMemberRoleDto(d domain.MemberRole) MemberRoleDto {
+	return MemberRoleDto{
+		Id:          d.Id,
+		CafeRoleIds: d.CafeRoleIds,
+	}
+}
+
 type DetailDto struct {
 	Id          int    `json:"id"`
 	CafeRoleIds string `json:"cafe_role_ids"`

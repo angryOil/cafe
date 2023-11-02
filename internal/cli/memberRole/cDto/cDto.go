@@ -31,3 +31,15 @@ func ToDomainList(dtos []MemberDetailRole) []domain.MemberRole {
 	}
 	return results
 }
+
+type MemberRole struct {
+	Id          int    `json:"id"`
+	CafeRoleIds string `json:"cafe_role_ids"`
+}
+
+func (m MemberRole) ToDomain() domain.MemberRole {
+	return domain.MemberRole{
+		Id:          m.Id,
+		CafeRoleIds: m.CafeRoleIds,
+	}
+}
