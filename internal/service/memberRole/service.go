@@ -29,3 +29,8 @@ func (s Service) PutRole(ctx context.Context, cafeId int, memberId int, d domain
 	err := s.r.PutRole(ctx, cafeId, memberId, d)
 	return err
 }
+
+func (s Service) Delete(ctx context.Context, cafeId int, memberId int, mRoleId int) error {
+	err := s.r.Delete(ctx, cafeId, memberId, mRoleId)
+	return err
+}

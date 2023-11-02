@@ -31,7 +31,7 @@ func NewMemberRoleHandler(cafeCon controller.CafeController, memCon member.Contr
 	// 카페 전체인원관련 권한 확인
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles", h.getMembersRoles).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.getOneMemberRoles).Methods(http.MethodGet)
-	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.upsert).Methods(http.MethodPut)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}/{mRoleId:[0-9]+}", h.delete).Methods(http.MethodDelete)
 	return r
 }
 
@@ -217,6 +217,45 @@ func (h MemberRoleHandler) upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err = h.mRoleCon.PutRole(r.Context(), cafeId, memberId, d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h MemberRoleHandler) delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+	mRoleId, err := strconv.Atoi(vars["mRoleId"])
+	if err != nil {
+		http.Error(w, "invalid member role id", http.StatusBadRequest)
+		return
+	}
+	memberId, err := strconv.Atoi(vars["memberId"])
+	if err != nil {
+		http.Error(w, "invalid member id", http.StatusBadRequest)
+		return
+	}
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "you do not permission", http.StatusForbidden)
+		return
+	}
+
+	err = h.mRoleCon.Delete(r.Context(), cafeId, memberId, mRoleId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

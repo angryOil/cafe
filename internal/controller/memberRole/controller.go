@@ -37,3 +37,8 @@ func (c Controller) PutRole(ctx context.Context, cafeId, memberId int, putDto re
 	err := c.s.PutRole(ctx, cafeId, memberId, d)
 	return err
 }
+
+func (c Controller) Delete(ctx context.Context, cafeId int, memberId int, mRoleId int) error {
+	err := c.s.Delete(ctx, cafeId, memberId, mRoleId)
+	return err
+}
