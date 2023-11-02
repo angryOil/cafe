@@ -66,3 +66,8 @@ func (c Controller) GetMembersByMemberIds(ctx context.Context, memberIds []int) 
 	domains, err := c.s.GetMemberInfoByMemberIds(ctx, memberIds)
 	return res.ToMemberInfoDtoList(domains), err
 }
+
+func (c Controller) CheckExistsMemberByMemberId(ctx context.Context, cafeId, memberId int) (bool, error) {
+	ok, err := c.s.CheckExistsByMemberId(ctx, cafeId, memberId)
+	return ok, err
+}

@@ -7,6 +7,7 @@ import (
 	"cafe/internal/controller/cafeRole/res"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
+	req2 "cafe/internal/controller/memberRole/req"
 	res2 "cafe/internal/controller/memberRole/res"
 	"cafe/internal/page"
 	"encoding/json"
@@ -30,7 +31,63 @@ func NewMemberRoleHandler(cafeCon controller.CafeController, memCon member.Contr
 	// 카페 전체인원관련 권한 확인
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles", h.getMembersRoles).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.getOneMemberRoles).Methods(http.MethodGet)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.upsert).Methods(http.MethodPut)
 	return r
+}
+
+func (h MemberRoleHandler) getOneMemberRoles(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	memberId, err := strconv.Atoi(vars["memberId"])
+	if err != nil {
+		http.Error(w, "invalid member id", http.StatusBadRequest)
+		return
+	}
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id ", http.StatusBadRequest)
+		return
+	}
+
+	d, err := h.mRoleCon.GetOneMemberRoles(r.Context(), cafeId, memberId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	memberIdsArr := stringToIntArr(d.CafeRoleIds)
+
+	reqPage := page.GetPageReqByRequest(r)
+	cafeRoles, _, err := h.cRoleCon.GetList(r.Context(), cafeId, reqPage)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	roleMap := make(map[int]res.RoleDto)
+	for _, cRole := range cafeRoles {
+		roleMap[cRole.Id] = cRole
+	}
+
+	roleArr := make([]res2.Role, 0)
+	for mId := range memberIdsArr {
+		role, ok := roleMap[mId]
+		if !ok {
+			continue
+		}
+		roleArr = append(roleArr, res2.Role{
+			RoleId: role.Id,
+			Name:   role.Name,
+		})
+	}
+
+	memberRoleArrDto := d.ToRoleArrDto(roleArr)
+
+	data, err := json.Marshal(memberRoleArrDto)
+	if err != nil {
+		log.Println("getOneMemberRoles json.Marshal err: ", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(data)
 }
 
 // todo 다른 방법있을지 고민하기  심각하게 성능이 걱정되는 메소드
@@ -101,61 +158,6 @@ func (h MemberRoleHandler) getMembersRoles(w http.ResponseWriter, r *http.Reques
 	w.Write(data)
 }
 
-func (h MemberRoleHandler) getOneMemberRoles(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	memberId, err := strconv.Atoi(vars["memberId"])
-	if err != nil {
-		http.Error(w, "invalid member id", http.StatusBadRequest)
-		return
-	}
-	cafeId, err := strconv.Atoi(vars["cafeId"])
-	if err != nil {
-		http.Error(w, "invalid cafe id ", http.StatusBadRequest)
-		return
-	}
-
-	d, err := h.mRoleCon.GetOneMemberRoles(r.Context(), cafeId, memberId)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	memberIdsArr := stringToIntArr(d.CafeRoleIds)
-
-	reqPage := page.GetPageReqByRequest(r)
-	cafeRoles, _, err := h.cRoleCon.GetList(r.Context(), cafeId, reqPage)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	roleMap := make(map[int]res.RoleDto)
-	for _, cRole := range cafeRoles {
-		roleMap[cRole.Id] = cRole
-	}
-
-	roleArr := make([]res2.Role, 0)
-	for mId := range memberIdsArr {
-		role, ok := roleMap[mId]
-		if !ok {
-			continue
-		}
-		roleArr = append(roleArr, res2.Role{
-			RoleId: role.Id,
-			Name:   role.Name,
-		})
-	}
-
-	memberRoleArrDto := d.ToRoleArrDto(roleArr)
-
-	data, err := json.Marshal(memberRoleArrDto)
-	if err != nil {
-		log.Println("getOneMemberRoles json.Marshal err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	w.Header().Add("Content-Type", "application/json")
-	w.Write(data)
-}
-
 func stringToIntArr(s string) []int {
 	str := strings.ReplaceAll(s, " ", "")
 	arr := strings.Split(str, ",")
@@ -168,4 +170,55 @@ func stringToIntArr(s string) []int {
 		intArr = append(intArr, i)
 	}
 	return intArr
+}
+
+func (h MemberRoleHandler) upsert(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "you do not have permission", http.StatusForbidden)
+		return
+	}
+
+	memberId, err := strconv.Atoi(vars["memberId"])
+	if err != nil {
+		http.Error(w, "invalid member id", http.StatusBadRequest)
+		return
+	}
+
+	ok, err = h.memCon.CheckExistsMemberByMemberId(r.Context(), cafeId, memberId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "member not found", http.StatusNotFound)
+		return
+	}
+
+	var d req2.PutMemberRoleDto
+	err = json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.mRoleCon.PutRole(r.Context(), cafeId, memberId, d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

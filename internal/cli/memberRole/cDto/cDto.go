@@ -1,6 +1,8 @@
 package cDto
 
-import "cafe/internal/domain"
+import (
+	"cafe/internal/domain"
+)
 
 type ListTotalDto[T any] struct {
 	Contents []T `json:"contents"`
@@ -41,5 +43,15 @@ func (m MemberRole) ToDomain() domain.MemberRole {
 	return domain.MemberRole{
 		Id:          m.Id,
 		CafeRoleIds: m.CafeRoleIds,
+	}
+}
+
+type PutMemberRole struct {
+	CafeRoleIds string `json:"cafe_role_ids"`
+}
+
+func ToPutMemberRoleCDto(d domain.MemberRole) PutMemberRole {
+	return PutMemberRole{
+		CafeRoleIds: d.CafeRoleIds,
 	}
 }

@@ -1,6 +1,7 @@
 package memberRole
 
 import (
+	"bytes"
 	"cafe/internal/cli/memberRole/cDto"
 	"cafe/internal/domain"
 	page2 "cafe/internal/page"
@@ -85,4 +86,38 @@ func (r Requester) GetOneMemberRoles(ctx context.Context, cafeId int, memberId i
 		return domain.MemberRole{}, errors.New("internal server error")
 	}
 	return d.ToDomain(), nil
+}
+
+func (r Requester) PutRole(ctx context.Context, cafeId int, memberId int, d domain.MemberRole) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, cafeId, memberId)
+	cDto := cDto.ToPutMemberRoleCDto(d)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(cDto)
+	if err != nil {
+		log.Println("PutRole json.NewEncoder err: ", err)
+		return errors.New("internal server error")
+	}
+
+	re, err := http.NewRequest("PUT", reqUrl, &buf)
+	if err != nil {
+		log.Println("PutRole http.NewRequest err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("PutRole http.DefaultClient err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("PutRole readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
 }

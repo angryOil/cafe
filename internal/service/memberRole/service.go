@@ -24,3 +24,8 @@ func (s Service) GetOneMemberRoles(ctx context.Context, cafeId int, memberId int
 	d, err := s.r.GetOneMemberRoles(ctx, cafeId, memberId)
 	return d, err
 }
+
+func (s Service) PutRole(ctx context.Context, cafeId int, memberId int, d domain.MemberRole) error {
+	err := s.r.PutRole(ctx, cafeId, memberId, d)
+	return err
+}
