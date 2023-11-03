@@ -95,10 +95,11 @@ swag init -g cmd/app/main.go
                 id
                 cafe_id
                 board_type_id
-                C: []roles
-                R: []roles  // 매니저는 읽기 권한이 기본적으로 추가됩니다.
-                U: []roles  // 업데이트 권한 없으면 수정불가능한 게시글이됩니다.
-                D: []roles // 매니저는 무조건 삭제권한을 얻습니다(관리 차원)
+                create_roles: []roles varchar // 생성권한
+                read_roles: []roles varchar  // 매니저는 읽기 권한이 기본적으로 추가됩니다.
+                update_roles: []roles varchar  // 업데이트 권한 없으면 수정불가능한 게시글이됩니다.
+                update_able:  bool // 업데이트가 가능한지 불가능시 roles 에 관계없이 수정이 불가능합니다 
+                delete_roles: []roles varchar  // 매니저는 무조건 삭제권한을 얻습니다(관리 차원)
             }
         ban{    // 한 유저 + 카페 당 벤은 1번만 가능 
             (uniq key: user_id + cafe_id
