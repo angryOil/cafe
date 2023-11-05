@@ -2,12 +2,14 @@ package main
 
 import (
 	"cafe/cmd/app/handler"
+	boardAction3 "cafe/internal/cli/boardAction"
 	boardType3 "cafe/internal/cli/boardType"
 	cafeRole2 "cafe/internal/cli/cafeRole"
 	member3 "cafe/internal/cli/member"
 	memberRole3 "cafe/internal/cli/memberRole"
 	"cafe/internal/controller"
 	"cafe/internal/controller/ban"
+	"cafe/internal/controller/boardAction"
 	"cafe/internal/controller/boardType"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/member"
@@ -17,6 +19,7 @@ import (
 	"cafe/internal/repository/infla"
 	"cafe/internal/service"
 	ban2 "cafe/internal/service/ban"
+	boardAction2 "cafe/internal/service/boardAction"
 	boardType2 "cafe/internal/service/boardType"
 	member2 "cafe/internal/service/member"
 	memberRole2 "cafe/internal/service/memberRole"
@@ -27,6 +30,10 @@ import (
 
 func main() {
 	r := mux.NewRouter()
+
+	// 보드 액션
+	bah := getBoardActionHandler()
+	r.PathPrefix("/cafes/{cafeId:[0-9]+}/board-actions").Handler(bah)
 
 	// 멤버 룰
 	mrH := getMemberRoleHandler()
@@ -64,6 +71,10 @@ var cafeController = controller.NewCafeController(service.NewService(repository.
 var memberController = member.NewController(member2.NewService(member3.NewRequester()))
 var roleController = cafeRole.NewController(role.NewService(cafeRole2.NewRequester()))
 var memberRoleController = memberRole.NewController(memberRole2.NewService(memberRole3.NewRequester()))
+
+func getBoardActionHandler() http.Handler {
+	return handler.NewBoardActionHandler(boardAction.NewController(boardAction2.NewService(boardAction3.NewRequester())))
+}
 
 func getMemberRoleHandler() http.Handler {
 	return handler.NewMemberRoleHandler(cafeController, memberController, roleController, memberRoleController)

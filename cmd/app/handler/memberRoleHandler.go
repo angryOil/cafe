@@ -18,6 +18,8 @@ import (
 	"strings"
 )
 
+// 조회 기능시 member_roles를 조회후 cafe_roles의 id 와 이름으로 멤버에 role을 조립함
+
 type MemberRoleHandler struct {
 	cafeCon  controller.CafeController //
 	memCon   member.Controller
