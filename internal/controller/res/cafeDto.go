@@ -1,21 +1,27 @@
 package res
 
-import "cafe/internal/domain"
+import (
+	"cafe/internal/domain/cafe_vo"
+)
+
+type CafeList struct {
+	Contents []CafeListDto `json:"contents"`
+}
 
 type CafeListDto struct {
 	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
-func ToListDtoList(cafes []domain.Cafe) []CafeListDto {
-	dtos := make([]CafeListDto, len(cafes))
-	for i, cafe := range cafes {
-		dtos[i] = CafeListDto{
-			Id:   cafe.Id,
-			Name: cafe.Name,
+func ToListDtoList(pageInfos []cafe_vo.CafeListInfo) []CafeListDto {
+	dto := make([]CafeListDto, len(pageInfos))
+	for i, info := range pageInfos {
+		dto[i] = CafeListDto{
+			Id:   info.Id,
+			Name: info.Name,
 		}
 	}
-	return dtos
+	return dto
 }
 
 type CafeDetailDto struct {
@@ -24,10 +30,10 @@ type CafeDetailDto struct {
 	Description string `json:"description,omitempty"`
 }
 
-func ToDetailDto(cafe domain.Cafe) CafeDetailDto {
+func ToDetailDto(detail cafe_vo.Detail) CafeDetailDto {
 	return CafeDetailDto{
-		Id:          cafe.Id,
-		Name:        cafe.Name,
-		Description: cafe.Description,
+		Id:          detail.Id,
+		Name:        detail.Name,
+		Description: detail.Description,
 	}
 }

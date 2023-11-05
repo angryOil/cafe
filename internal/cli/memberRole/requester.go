@@ -122,17 +122,22 @@ func (r Requester) PutRole(ctx context.Context, cafeId int, memberId int, d doma
 	return nil
 }
 
+const (
+	InternalServerErr = "internal server error"
+)
+
 func (r Requester) Delete(ctx context.Context, cafeId int, memberId int, mRoleId int) error {
 	reqUrl := fmt.Sprintf("%s/%d/%d/%d", baseUrl, cafeId, memberId, mRoleId)
 	re, err := http.NewRequest("DELETE", reqUrl, nil)
+
 	if err != nil {
 		log.Println("Delete NewRequest err: ", err)
-		return errors.New("internal server error")
+		return errors.New(InternalServerErr)
 	}
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("Delete DefaultClient err: ", err)
-		return errors.New("internal server error")
+		return errors.New(InternalServerErr)
 	}
 	defer resp.Body.Close()
 

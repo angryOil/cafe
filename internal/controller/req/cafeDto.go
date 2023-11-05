@@ -14,14 +14,15 @@ type CreateCafeDto struct {
 func (c CreateCafeDto) ToDomain(userId int) (domain.Cafe, error) {
 	err := validateCreateCafe(c.Name, userId)
 	if err != nil {
-		return domain.Cafe{}, err
+		return domain.NewCafeBuilder().Build(), err
 	}
-	return domain.Cafe{
-		Name:        c.Name,
-		OwnerId:     userId,
-		Description: c.Description,
-		CreatedAt:   time.Now(),
-	}, nil
+	return domain.NewCafeBuilder().
+		Name(c.Name).
+		OwnerId(userId).
+		Description(c.Description).
+		CreatedAt(time.Now()).
+		Build(), nil
+
 }
 
 type UpdateCafeDto struct {
@@ -31,14 +32,15 @@ type UpdateCafeDto struct {
 
 func (c UpdateCafeDto) ToDomain(userId, cafeId int) (domain.Cafe, error) {
 	if c.Name == "" {
-		return domain.Cafe{}, errors.New("name is empty")
+		return domain.NewCafeBuilder().Build(), errors.New("name is empty")
 	}
-	return domain.Cafe{
-		Id:          cafeId,
-		Name:        c.Name,
-		OwnerId:     userId,
-		Description: c.Description,
-	}, nil
+
+	return domain.NewCafeBuilder().
+		Id(cafeId).
+		Name(c.Name).
+		OwnerId(userId).
+		Description(c.Description).
+		Build(), nil
 }
 
 func validateCreateCafe(name string, ownerId int) error {
