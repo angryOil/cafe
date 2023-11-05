@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"cafe/internal/controller"
+	"cafe/internal/controller/cafe"
+	"cafe/internal/controller/cafe/res"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/member/req"
-	"cafe/internal/controller/res"
 	page2 "cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -16,10 +16,10 @@ import (
 
 type MemberHandler struct {
 	memberCon member.Controller
-	cafeCon   controller.CafeController
+	cafeCon   cafe.Controller
 }
 
-func NewMemberHandler(c member.Controller, cc controller.CafeController) http.Handler {
+func NewMemberHandler(c member.Controller, cc cafe.Controller) http.Handler {
 	m := mux.NewRouter()
 	h := MemberHandler{memberCon: c, cafeCon: cc}
 	//  나의 카페 리스트 조회 (cafe_ids)

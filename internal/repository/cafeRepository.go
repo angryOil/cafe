@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"cafe/internal/domain"
-	"cafe/internal/domain/cafe_vo"
+	"cafe/internal/domain/cafe"
+	"cafe/internal/domain/cafe/vo"
 	page2 "cafe/internal/page"
 	"cafe/internal/repository/model"
 	"cafe/internal/repository/request"
@@ -20,27 +20,31 @@ func NewRepository(db bun.IDB) CafeRepository {
 	return CafeRepository{db: db}
 }
 
+const (
+	InternalServerError = "internal server error"
+)
+
 func (r CafeRepository) Create(ctx context.Context, cd request.CreateCafe) error {
 	cModel := model.ToCreateModel(cd)
 	_, err := r.db.NewInsert().Model(&cModel).Exec(ctx)
 	return err
 }
 
-func (r CafeRepository) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]domain.Cafe, int, error) {
+func (r CafeRepository) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]cafe.Cafe, int, error) {
 	var list []model.CateList
 	count, err := r.db.NewSelect().Model(&list).Limit(reqPage.Size).Offset(reqPage.Offset).ScanAndCount(ctx)
 	if err != nil {
 		log.Println("GetCafes ScanAndCount err: ", err)
-		return []domain.Cafe{}, 0, errors.New("internal server error")
+		return []cafe.Cafe{}, 0, errors.New("internal server error")
 	}
 	return model.ToDomainList(list), count, nil
 }
 
-func (r CafeRepository) GetDetail(ctx context.Context, id int) ([]domain.Cafe, error) {
+func (r CafeRepository) GetDetail(ctx context.Context, id int) ([]cafe.Cafe, error) {
 	var list []model.Cafe
 	err := r.db.NewSelect().Model(&list).Where("id=?", id).Scan(ctx)
 	if err != nil {
-		return []domain.Cafe{}, err
+		return []cafe.Cafe{}, err
 	}
 	return model.ToDomainDetailList(list), nil
 }
@@ -48,9 +52,9 @@ func (r CafeRepository) GetDetail(ctx context.Context, id int) ([]domain.Cafe, e
 func (r CafeRepository) Save(
 	ctx context.Context,
 	ownerId int, cafeId int,
-	validFunc func(results []domain.Cafe) (domain.Cafe, error),
-	mergeFunc func(findDomain domain.Cafe) (cafe_vo.UpdateCafe, error),
-	saveValidFun func(cafe domain.Cafe) error,
+	validFunc func(results []cafe.Cafe) (cafe.Cafe, error),
+	mergeFunc func(findDomain cafe.Cafe) (vo.UpdateCafe, error),
+	saveValidFun func(cafe cafe.Cafe) error,
 ) error {
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -82,21 +86,24 @@ func (r CafeRepository) Save(
 		Description: info.Description,
 		CreatedAt:   info.CreatedAt,
 	})
+	err = saveValidFun(validDomain)
 	if err != nil {
 		log.Println("save saveValidFunc err: ", err)
+		return err
 	}
 	_, err = tx.NewInsert().Model(&m).
-		Column("name").
-		Column("description").
+		//Column("name").
+		//Column("description").
 		On("conflict (id) do update").Exec(ctx)
 	if err != nil {
-		return err
+		log.Println("Save NewInsert err: ", err)
+		return errors.New(InternalServerError)
 	}
 	err = tx.Commit()
 	return err
 }
 
-func (r CafeRepository) GetCafesByCafeIds(ctx context.Context, ids []int) ([]domain.Cafe, error) {
+func (r CafeRepository) GetCafesByCafeIds(ctx context.Context, ids []int) ([]cafe.Cafe, error) {
 	var cModels []model.Cafe
 	err := r.db.NewSelect().Model(&cModels).
 		Column("id").
@@ -104,7 +111,7 @@ func (r CafeRepository) GetCafesByCafeIds(ctx context.Context, ids []int) ([]dom
 		Where("id in (?)", bun.In(ids)).Scan(ctx)
 	if err != nil {
 		log.Println("GetCafesByCafeIds Scan err: ", err)
-		return []domain.Cafe{}, errors.New("internal server error")
+		return []cafe.Cafe{}, errors.New("internal server error")
 	}
 	return model.ToDomainDetailList(cModels), nil
 }
@@ -127,7 +134,7 @@ func (r CafeRepository) IsExistsByCafeId(ctx context.Context, cafeId int) (bool,
 	return ok, nil
 }
 
-func (r CafeRepository) GetOwnerIds(ctx context.Context, id int) ([]domain.Cafe, error) {
+func (r CafeRepository) GetOwnerIds(ctx context.Context, id int) ([]cafe.Cafe, error) {
 	var m []model.Cafe
 	err := r.db.NewSelect().Model(&m).
 		Column("owner_id").
@@ -140,10 +147,10 @@ func (r CafeRepository) GetOwnerIds(ctx context.Context, id int) ([]domain.Cafe,
 	return converterOwnerIds(m), nil
 }
 
-func converterOwnerIds(ms []model.Cafe) []domain.Cafe {
-	result := make([]domain.Cafe, len(ms))
+func converterOwnerIds(ms []model.Cafe) []cafe.Cafe {
+	result := make([]cafe.Cafe, len(ms))
 	for i, m := range ms {
-		result[i] = domain.NewCafeBuilder().OwnerId(m.OwnerId).Build()
+		result[i] = cafe.NewCafeBuilder().OwnerId(m.OwnerId).Build()
 	}
 	return result
 }

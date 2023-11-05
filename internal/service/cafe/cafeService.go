@@ -1,8 +1,8 @@
 package cafe
 
 import (
-	"cafe/internal/domain"
-	"cafe/internal/domain/cafe_vo"
+	"cafe/internal/domain/cafe"
+	"cafe/internal/domain/cafe/vo"
 	page2 "cafe/internal/page"
 	"cafe/internal/repository"
 	request2 "cafe/internal/repository/request"
@@ -14,26 +14,26 @@ import (
 	"time"
 )
 
-type CafeService struct {
+type Service struct {
 	repo repository.CafeRepository
 }
 
-func NewService(repo repository.CafeRepository) CafeService {
-	return CafeService{repo: repo}
+func NewService(repo repository.CafeRepository) Service {
+	return Service{repo: repo}
 }
 
-func (s CafeService) CreateCafe(ctx context.Context, req request.CreateCafe) error {
+func (s Service) CreateCafe(ctx context.Context, req request.CreateCafe) error {
 	// 생성일시 할당
 	createdAt := time.Now()
 
 	// cafe 생성 검증
-	cafe := domain.NewCafeBuilder().
+	c := cafe.NewCafeBuilder().
 		Name(req.Name).
 		Description(req.Description).
 		OwnerId(req.OwnerId).
 		CreatedAt(createdAt).
 		Build()
-	err := cafe.ValidCafeFiled()
+	err := c.ValidCreate()
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (s CafeService) CreateCafe(ctx context.Context, req request.CreateCafe) err
 	return err
 }
 
-func (s CafeService) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]response.GetCafes, int, error) {
+func (s Service) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]response.GetCafes, int, error) {
 	cafes, count, err := s.repo.GetCafes(ctx, reqPage)
 	if err != nil {
 		log.Println("getCafes err: ", err)
@@ -66,18 +66,18 @@ func (s CafeService) GetCafes(ctx context.Context, reqPage page2.ReqPage) ([]res
 	return dto, count, nil
 }
 
-func (s CafeService) GetDetail(ctx context.Context, id int) (domain.Cafe, error) {
+func (s Service) GetDetail(ctx context.Context, id int) (cafe.Cafe, error) {
 	if id == 0 {
-		return domain.NewCafeBuilder().Build(), errors.New("id is zero")
+		return cafe.NewCafeBuilder().Build(), errors.New("id is zero")
 	}
 
 	resuls, err := s.repo.GetDetail(ctx, id)
 	if err != nil {
 		log.Println("getDetail err: ", err)
-		return domain.NewCafeBuilder().Build(), errors.New("internal server error")
+		return cafe.NewCafeBuilder().Build(), errors.New("internal server error")
 	}
 	if len(resuls) == 0 {
-		return domain.NewCafeBuilder().Build(), nil
+		return cafe.NewCafeBuilder().Build(), nil
 	}
 	return resuls[0], nil
 }
@@ -88,7 +88,7 @@ const (
 	NotFoundOwnerId     = "not found ownerId"
 )
 
-func (s CafeService) GetOwnerId(ctx context.Context, id int) (response.OwnerId, error) {
+func (s Service) GetOwnerId(ctx context.Context, id int) (response.OwnerId, error) {
 	if id < 1 {
 		return response.OwnerId{}, errors.New(InvalidCafeId)
 	}
@@ -104,11 +104,11 @@ func (s CafeService) GetOwnerId(ctx context.Context, id int) (response.OwnerId, 
 	return response.OwnerId{Id: cafes[0].GetOwnerId()}, nil
 }
 
-func (s CafeService) Update(ctx context.Context, req request.Update) error {
+func (s Service) Update(ctx context.Context, req request.Update) error {
 	var id, ownerId = req.Id, req.OwnerId
 	var name, description = req.Name, req.Description
 
-	err := domain.NewCafeBuilder().
+	err := cafe.NewCafeBuilder().
 		Id(id).
 		OwnerId(ownerId).
 		Name(name).
@@ -121,28 +121,28 @@ func (s CafeService) Update(ctx context.Context, req request.Update) error {
 
 	err = s.repo.Save(ctx,
 		ownerId, id,
-		func(results []domain.Cafe) (domain.Cafe, error) {
+		func(results []cafe.Cafe) (cafe.Cafe, error) {
 			if len(results) == 0 {
-				return domain.NewCafeBuilder().Build(), errors.New("this cafe is not exists")
+				return cafe.NewCafeBuilder().Build(), errors.New("this cafe is not exists")
 			}
 			return results[0], nil
 		},
-		func(findDomain domain.Cafe) (cafe_vo.UpdateCafe, error) {
+		func(findDomain cafe.Cafe) (vo.UpdateCafe, error) {
 			updatedCafe := findDomain.Update(name, description)
 			err := updatedCafe.VerifyUpdate()
 			if err != nil {
-				return cafe_vo.UpdateCafe{}, err
+				return vo.UpdateCafe{}, err
 			}
 			return findDomain.UpdateCafeInfo(), nil
 		},
-		func(cafe domain.Cafe) error {
+		func(cafe cafe.Cafe) error {
 			return cafe.VerifyUpdate()
 		},
 	)
 	return err
 }
 
-func (s CafeService) GetListByIds(ctx context.Context, ids []int) ([]response.GetListByIds, error) {
+func (s Service) GetListByIds(ctx context.Context, ids []int) ([]response.GetListByIds, error) {
 	cDomains, err := s.repo.GetCafesByCafeIds(ctx, ids)
 	dto := make([]response.GetListByIds, len(cDomains))
 	for i, cDomain := range cDomains {
@@ -155,12 +155,12 @@ func (s CafeService) GetListByIds(ctx context.Context, ids []int) ([]response.Ge
 	return dto, err
 }
 
-func (s CafeService) CheckIsMine(ctx context.Context, userId int, cafeId int) (bool, error) {
+func (s Service) CheckIsMine(ctx context.Context, userId int, cafeId int) (bool, error) {
 	ok, err := s.repo.IsExistsByUserIdCafeId(ctx, userId, cafeId)
 	return ok, err
 }
 
-func (s CafeService) IsExistsCafe(ctx context.Context, cafeId int) (bool, error) {
+func (s Service) IsExistsCafe(ctx context.Context, cafeId int) (bool, error) {
 	ok, err := s.repo.IsExistsByCafeId(ctx, cafeId)
 	return ok, err
 }

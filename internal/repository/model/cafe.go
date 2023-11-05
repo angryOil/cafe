@@ -1,14 +1,14 @@
 package model
 
 import (
-	domain "cafe/internal/domain"
+	"cafe/internal/domain/cafe"
 	"cafe/internal/repository/request"
 	"github.com/uptrace/bun"
 	"time"
 )
 
 type Cafe struct {
-	bun.BaseModel `bun:"table:cafe,alias:t"`
+	bun.BaseModel `bun:"table:cafe,alias:c"`
 
 	Id          int       `bun:"id,pk,autoincrement"`
 	OwnerId     int       `bun:"owner_id,notnull"`
@@ -28,15 +28,18 @@ func ToCreateModel(cd request.CreateCafe) Cafe {
 
 func ToSaveModel(uc request.UpdateCafe) Cafe {
 	return Cafe{
+		Id:          uc.Id,
+		OwnerId:     uc.OwnerId,
 		Name:        uc.Name,
 		Description: uc.Description,
+		CreatedAt:   uc.CreatedAt,
 	}
 }
 
-func ToDomainDetailList(list []Cafe) []domain.Cafe {
-	results := make([]domain.Cafe, len(list))
+func ToDomainDetailList(list []Cafe) []cafe.Cafe {
+	results := make([]cafe.Cafe, len(list))
 	for i, detail := range list {
-		results[i] = domain.NewCafeBuilder().
+		results[i] = cafe.NewCafeBuilder().
 			Id(detail.Id).
 			OwnerId(detail.OwnerId).
 			Name(detail.Name).
@@ -56,15 +59,14 @@ type CateList struct {
 	Description string `bun:"description"`
 }
 
-func ToDomainList(list []CateList) []domain.Cafe {
-	results := make([]domain.Cafe, len(list))
-	for i, cafe := range list {
-		results[i] = domain.NewCafeBuilder().
-			Id(cafe.Id).
-			Name(cafe.Name).
-			Description(cafe.Description).
+func ToDomainList(list []CateList) []cafe.Cafe {
+	results := make([]cafe.Cafe, len(list))
+	for i, c := range list {
+		results[i] = cafe.NewCafeBuilder().
+			Id(c.Id).
+			Name(c.Name).
+			Description(c.Description).
 			Build()
-
 	}
 	return results
 }

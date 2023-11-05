@@ -2,7 +2,7 @@ package handler
 
 import (
 	"cafe/internal/cli/memberRole/cDto"
-	"cafe/internal/controller"
+	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/cafeRole/res"
 	"cafe/internal/controller/member"
@@ -19,13 +19,13 @@ import (
 )
 
 type MemberRoleHandler struct {
-	cafeCon  controller.CafeController //
+	cafeCon  cafe.Controller //
 	memCon   member.Controller
 	cRoleCon cafeRole.Controller
 	mRoleCon memberRole.Controller
 }
 
-func NewMemberRoleHandler(cafeCon controller.CafeController, memCon member.Controller, cRoleCon cafeRole.Controller, mRoleCon memberRole.Controller) http.Handler {
+func NewMemberRoleHandler(cafeCon cafe.Controller, memCon member.Controller, cRoleCon cafeRole.Controller, mRoleCon memberRole.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := MemberRoleHandler{cafeCon: cafeCon, memCon: memCon, mRoleCon: mRoleCon}
 	// 카페 전체인원관련 권한 확인

@@ -1,4 +1,4 @@
-package cafe_vo
+package vo
 
 import "time"
 

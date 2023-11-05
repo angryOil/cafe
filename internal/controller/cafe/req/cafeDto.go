@@ -1,7 +1,7 @@
 package req
 
 import (
-	"cafe/internal/domain"
+	"cafe/internal/domain/cafe"
 	"errors"
 	"time"
 )
@@ -11,12 +11,12 @@ type CreateCafeDto struct {
 	Description string `json:"description"`
 }
 
-func (c CreateCafeDto) ToDomain(userId int) (domain.Cafe, error) {
+func (c CreateCafeDto) ToDomain(userId int) (cafe.Cafe, error) {
 	err := validateCreateCafe(c.Name, userId)
 	if err != nil {
-		return domain.NewCafeBuilder().Build(), err
+		return cafe.NewCafeBuilder().Build(), err
 	}
-	return domain.NewCafeBuilder().
+	return cafe.NewCafeBuilder().
 		Name(c.Name).
 		OwnerId(userId).
 		Description(c.Description).
@@ -30,12 +30,12 @@ type UpdateCafeDto struct {
 	Description string `json:"description"`
 }
 
-func (c UpdateCafeDto) ToDomain(userId, cafeId int) (domain.Cafe, error) {
+func (c UpdateCafeDto) ToDomain(userId, cafeId int) (cafe.Cafe, error) {
 	if c.Name == "" {
-		return domain.NewCafeBuilder().Build(), errors.New("name is empty")
+		return cafe.NewCafeBuilder().Build(), errors.New("name is empty")
 	}
 
-	return domain.NewCafeBuilder().
+	return cafe.NewCafeBuilder().
 		Id(cafeId).
 		Name(c.Name).
 		OwnerId(userId).

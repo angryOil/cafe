@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"cafe/internal/controller"
+	"cafe/internal/controller/cafe"
+	"cafe/internal/controller/cafe/res"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/cafeRole/req"
-	"cafe/internal/controller/res"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -15,11 +15,11 @@ import (
 )
 
 type CafeRoleHandler struct {
-	cafeCon controller.CafeController
+	cafeCon cafe.Controller
 	roleCon cafeRole.Controller
 }
 
-func NewCafeRoleHandler(cafeCon controller.CafeController, roleCon cafeRole.Controller) http.Handler {
+func NewCafeRoleHandler(cafeCon cafe.Controller, roleCon cafeRole.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := CafeRoleHandler{roleCon: roleCon, cafeCon: cafeCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/roles", h.getList).Methods(http.MethodGet)

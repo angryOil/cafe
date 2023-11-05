@@ -2,15 +2,13 @@ package main
 
 import (
 	"cafe/cmd/app/handler"
-	boardAction3 "cafe/internal/cli/boardAction"
 	boardType3 "cafe/internal/cli/boardType"
 	cafeRole2 "cafe/internal/cli/cafeRole"
 	member3 "cafe/internal/cli/member"
 	memberRole3 "cafe/internal/cli/memberRole"
-	"cafe/internal/controller"
 	"cafe/internal/controller/ban"
-	"cafe/internal/controller/boardAction"
 	"cafe/internal/controller/boardType"
+	cafe2 "cafe/internal/controller/cafe"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
@@ -18,7 +16,6 @@ import (
 	"cafe/internal/repository"
 	"cafe/internal/repository/infla"
 	ban2 "cafe/internal/service/ban"
-	boardAction2 "cafe/internal/service/boardAction"
 	boardType2 "cafe/internal/service/boardType"
 	"cafe/internal/service/cafe"
 	member2 "cafe/internal/service/member"
@@ -32,8 +29,8 @@ func main() {
 	r := mux.NewRouter()
 
 	// 보드 액션
-	bAH := getBoardActionHandler()
-	r.PathPrefix("/cafes/{cafeId:[0-9]+}/board-actions").Handler(bAH)
+	//bAH := getBoardActionHandler()
+	//r.PathPrefix("/cafes/{cafeId:[0-9]+}/board-actions").Handler(bAH)
 
 	// 멤버 룰
 	mrH := getMemberRoleHandler()
@@ -67,14 +64,14 @@ func main() {
 
 var boardTypeController = boardType.NewController(boardType2.NewService(boardType3.NewRequester()))
 var banController = ban.NewController(ban2.NewService(repository.NewBanRepository(infla.NewDB())))
-var cafeController = controller.NewCafeController(cafe.NewService(repository.NewRepository(infla.NewDB())))
+var cafeController = cafe2.NewCafeController(cafe.NewService(repository.NewRepository(infla.NewDB())))
 var memberController = member.NewController(member2.NewService(member3.NewRequester()))
 var roleController = cafeRole.NewController(role.NewService(cafeRole2.NewRequester()))
 var memberRoleController = memberRole.NewController(memberRole2.NewService(memberRole3.NewRequester()))
 
-func getBoardActionHandler() http.Handler {
-	return handler.NewBoardActionHandler(boardAction.NewController(boardAction2.NewService(boardAction3.NewRequester())))
-}
+//func getBoardActionHandler() http.Handler {
+//	return handler.NewBoardActionHandler(boardAction.NewController(boardAction2.NewService(boardAction3.NewRequester())))
+//}
 
 func getMemberRoleHandler() http.Handler {
 	return handler.NewMemberRoleHandler(cafeController, memberController, roleController, memberRoleController)

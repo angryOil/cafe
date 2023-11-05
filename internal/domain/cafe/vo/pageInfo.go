@@ -1,4 +1,4 @@
-package cafe_vo
+package vo
 
 type CafeListInfo struct {
 	Id   int    // 카페 식별자
