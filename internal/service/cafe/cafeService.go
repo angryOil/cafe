@@ -71,15 +71,15 @@ func (s Service) GetDetail(ctx context.Context, id int) (cafe.Cafe, error) {
 		return cafe.NewCafeBuilder().Build(), errors.New("id is zero")
 	}
 
-	resuls, err := s.repo.GetDetail(ctx, id)
+	results, err := s.repo.GetDetail(ctx, id)
 	if err != nil {
 		log.Println("getDetail err: ", err)
 		return cafe.NewCafeBuilder().Build(), errors.New("internal server error")
 	}
-	if len(resuls) == 0 {
+	if len(results) == 0 {
 		return cafe.NewCafeBuilder().Build(), nil
 	}
-	return resuls[0], nil
+	return results[0], nil
 }
 
 const (

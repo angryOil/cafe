@@ -97,10 +97,10 @@ const (
 )
 
 func (c *cafe) VerifyUpdate() error {
-	if c.id == 0 {
+	if c.id < 1 {
 		return errors.New(NotVerifyId)
 	}
-	if c.ownerId == 0 {
+	if c.ownerId < 1 {
 		return errors.New(NotVerifyOwnerId)
 	}
 	if c.name == "" {
