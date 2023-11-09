@@ -29,7 +29,7 @@ func NewMemberHandler(c member.Controller, cc cafe.Controller) http.Handler {
 	// 카페 가입 신청
 	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/join", h.joinCafe).Methods(http.MethodPost)
 
-	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members", h.patchMember).Methods(http.MethodPatch)
+	m.HandleFunc("/cafes/{cafeId:[0-9]+}/members/{memberId:[0-9]+}", h.patchMember).Methods(http.MethodPatch)
 
 	// 관리자
 	// 카페 가입 멤버리스트 조회 현재로선 cafe 주인인지 확인 하고 요청
@@ -39,30 +39,39 @@ func NewMemberHandler(c member.Controller, cc cafe.Controller) http.Handler {
 	return m
 }
 
+const (
+	YouDoNotHavePermission = "You do not have permission"
+	InternalServerError    = "internal server error"
+	InvalidUserId          = "invalid user id"
+	InvalidCafeId          = "invalid cafe id"
+	CafeNotExists          = "cafe is not exists"
+	InvalidMemberId        = "invalid member id"
+)
+
 func (h MemberHandler) getMyCafeList(w http.ResponseWriter, r *http.Request) {
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		http.Error(w, "invalid user id", http.StatusBadRequest)
+		http.Error(w, InvalidUserId, http.StatusBadRequest)
 		return
 	}
 
 	reqPage := page2.GetPageReqByRequest(r)
-	idsTotalDto, err := h.memberCon.GetMyCafeIds(r.Context(), userId, reqPage)
+	ids, total, err := h.memberCon.GetMyCafeIds(r.Context(), userId, reqPage)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	cafeDtos, err := h.cafeCon.GetCafesByCafeIds(r.Context(), idsTotalDto.Ids)
+	cafeDtos, err := h.cafeCon.GetCafesByCafeIds(r.Context(), ids)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	listTotalDto := res.NewListTotalDto(cafeDtos, idsTotalDto.Total)
+	listTotalDto := res.NewListTotalDto(cafeDtos, total)
 	data, err := json.Marshal(listTotalDto)
 	if err != nil {
 		log.Println("getMyCafeList json.Marshal err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	w.Header().Add("Content-Type", "application/json")
@@ -74,13 +83,13 @@ func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id ", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		http.Error(w, "invalid user id", http.StatusBadRequest)
+		http.Error(w, InvalidUserId, http.StatusBadRequest)
 		return
 	}
 	dto, err := h.memberCon.GetMemberInfo(r.Context(), cafeId, userId)
@@ -90,13 +99,13 @@ func (h MemberHandler) getMemberInfo(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		log.Println("h.memberCon.getMemberInfo err: ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 	data, err := json.Marshal(&dto)
 	if err != nil {
 		log.Println("getMemberInfo : ", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -109,12 +118,12 @@ func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id ", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		http.Error(w, "invalid user id ", http.StatusBadRequest)
+		http.Error(w, InvalidUserId, http.StatusBadRequest)
 		return
 	}
 
@@ -124,7 +133,7 @@ func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !ok {
-		http.Error(w, "cafe not exists", http.StatusNotFound)
+		http.Error(w, CafeNotExists, http.StatusNotFound)
 		return
 	}
 
@@ -132,12 +141,7 @@ func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
 	err = json.NewDecoder(r.Body).Decode(&dto)
 	if err != nil {
 		log.Println("joinCafe json.NewDecoder err: ", err)
-		http.Error(w, "server internal error", http.StatusInternalServerError)
-		return
-	}
-
-	if dto.Nickname == "" {
-		http.Error(w, "nickname is empty", http.StatusBadRequest)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
 
@@ -166,14 +170,14 @@ func (h MemberHandler) joinCafe(w http.ResponseWriter, r *http.Request) {
 func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		http.Error(w, "invalid user id ", http.StatusBadRequest)
+		http.Error(w, InvalidUserId, http.StatusBadRequest)
 		return
 	}
 
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 
@@ -184,13 +188,13 @@ func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !isMine {
-		http.Error(w, "You do not have permission", http.StatusForbidden)
+		http.Error(w, YouDoNotHavePermission, http.StatusForbidden)
 		return
 	}
 	// 아래부터는  cafe api 에서 권한 체크를 했다고 산정하고 실행됨
 	isBanned := "true" == r.URL.Query().Get("ban")
 	reqPage := page2.GetPageReqByRequest(r)
-	mInfoDtos, count, err := h.memberCon.GetCafeMemberListCount(r.Context(), cafeId, isBanned, reqPage)
+	dto, count, err := h.memberCon.GetCafeMemberListCount(r.Context(), cafeId, isBanned, reqPage)
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid") {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -200,7 +204,7 @@ func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	totalDto := res.NewListTotalDto(mInfoDtos, count)
+	totalDto := res.NewListTotalDto(dto, count)
 	data, err := json.Marshal(&totalDto)
 	if err != nil {
 		log.Println("getMemberList json.Marshal err :", err)
@@ -212,14 +216,14 @@ func (h MemberHandler) getMemberList(w http.ResponseWriter, r *http.Request) {
 func (h MemberHandler) patchMember(w http.ResponseWriter, r *http.Request) {
 	userId, ok := r.Context().Value("userId").(int)
 	if !ok {
-		http.Error(w, "invalid user id ", http.StatusBadRequest)
+		http.Error(w, InvalidUserId, http.StatusBadRequest)
 		return
 	}
 
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 
@@ -230,7 +234,12 @@ func (h MemberHandler) patchMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !isMine {
-		http.Error(w, "You do not have permission", http.StatusForbidden)
+		http.Error(w, YouDoNotHavePermission, http.StatusForbidden)
+		return
+	}
+	memberId, err := strconv.Atoi(vars["memberId"])
+	if err != nil {
+		http.Error(w, InvalidMemberId, http.StatusBadRequest)
 		return
 	}
 
@@ -241,7 +250,7 @@ func (h MemberHandler) patchMember(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.memberCon.PatchMember(r.Context(), userId, cafeId, dto)
+	err = h.memberCon.PatchMember(r.Context(), memberId, dto)
 	if err != nil {
 		if strings.Contains(err.Error(), "no row") {
 			http.Error(w, err.Error(), http.StatusNotFound)

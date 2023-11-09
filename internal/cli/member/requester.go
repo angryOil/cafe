@@ -3,6 +3,8 @@ package member
 import (
 	"bytes"
 	dto2 "cafe/internal/cli/member/dto"
+	"cafe/internal/cli/member/req"
+	"cafe/internal/cli/member/res"
 	"cafe/internal/domain"
 	"cafe/internal/page"
 	"context"
@@ -32,46 +34,46 @@ const (
 
 // 해당 카페의 member(자기정보) 정보조회
 
-func (r Requester) GetCafeMyInfo(ctx context.Context, cafeId, userId int) (domain.Member, error) {
+func (r Requester) GetCafeMyInfo(ctx context.Context, cafeId, userId int) (res.GetCafeMyInfo, error) {
 	reqUrl := fmt.Sprintf("%s/%d/info/%d", memberURL, cafeId, userId)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("cli GetCafeMyInfo NewRequest err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetCafeMyInfo{}, errors.New(InternalServerError)
 	}
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("cli GetCafeMyInfo NewRequest err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetCafeMyInfo{}, errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetCafeMyInfo{}, errors.New(InternalServerError)
 	}
 
-	var md domain.Member
+	var md res.GetCafeMyInfo
 	err = json.NewDecoder(resp.Body).Decode(&md)
 	if err != nil {
 		log.Println("GetCafeMyInfo json decode err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetCafeMyInfo{}, errors.New(InternalServerError)
 	}
 	return md, nil
 }
 
-func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, reqPage page.ReqPage) (domain.IdsTotalDomain, error) {
+func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, reqPage page.ReqPage) ([]int, int, error) {
 	reqUrl := fmt.Sprintf("%s/list/%d?page=%d&size=%d", memberURL, userId, reqPage.Page, reqPage.Size)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetCafeIdsAndTotalByUserId NewRequest err: ", err)
-		return domain.IdsTotalDomain{}, errors.New(InternalServerError)
+		return []int{}, 0, errors.New(InternalServerError)
 	}
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetCafeIdsAndTotalByUserId DefaultClient.Do err: ", err)
-		return domain.IdsTotalDomain{}, errors.New(InternalServerError)
+		return []int{}, 0, errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
 
@@ -79,12 +81,12 @@ func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, r
 	err = json.NewDecoder(resp.Body).Decode(&iTD)
 	if err != nil {
 		log.Println("GetCafeIdsAndTotalByUserId json.decode err: ", err)
-		return domain.IdsTotalDomain{}, errors.New(InternalServerError)
+		return []int{}, 0, errors.New(InternalServerError)
 	}
-	return iTD, nil
+	return iTD.Ids, iTD.Total, nil
 }
 
-func (r Requester) JoinCafe(ctx context.Context, d domain.Member) error {
+func (r Requester) JoinCafe(ctx context.Context, d req.JoinCafe) error {
 	reqUrl := fmt.Sprintf("%s/%d/join/%d", memberURL, d.CafeId, d.UserId)
 	jd := dto2.ToJoinMemberDto(d)
 	data, err := json.Marshal(jd)
@@ -117,29 +119,29 @@ func (r Requester) JoinCafe(ctx context.Context, d domain.Member) error {
 	return nil
 }
 
-func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanned bool, reqPage page.ReqPage) (domain.MemberListCount, error) {
+func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBanned bool, reqPage page.ReqPage) (res.MemberInfoListCountDto, error) {
 	reqUrl := fmt.Sprintf("%s/admin/%d?ban=%t&page=%d&size=%d", memberURL, cafeId, isBanned, reqPage.Page, reqPage.Size)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetCafeMemberListCount NewRequest err: ", err)
-		return domain.MemberListCount{}, errors.New(InternalServerError)
+		return res.MemberInfoListCountDto{}, errors.New(InternalServerError)
 	}
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetCafeMemberListCount defaultClient do err: ", err)
-		return domain.MemberListCount{}, errors.New(InternalServerError)
+		return res.MemberInfoListCountDto{}, errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("GetCafeMemberListCount readBody err: ", err)
-			return domain.MemberListCount{}, errors.New(InternalServerError)
+			return res.MemberInfoListCountDto{}, errors.New(InternalServerError)
 		}
-		return domain.MemberListCount{}, errors.New(string(readBody))
+		return res.MemberInfoListCountDto{}, errors.New(string(readBody))
 	}
-	var listCount domain.MemberListCount
+	var listCount res.MemberInfoListCountDto
 	err = json.NewDecoder(resp.Body).Decode(&listCount)
 	if err != nil {
 		log.Println("GetCafeMemberListCount json decode err: ", err)
@@ -147,9 +149,9 @@ func (r Requester) GetCafeMemberListCount(ctx context.Context, cafeId int, isBan
 	return listCount, nil
 }
 
-func (r Requester) PatchMember(ctx context.Context, d domain.Member) error {
-	reqUrl := fmt.Sprintf("%s/%d/modify/%d", memberURL, d.CafeId, d.UserId)
-	dto := dto2.ToPatchDto(d)
+func (r Requester) PatchMember(ctx context.Context, d req.PatchMember) error {
+	reqUrl := fmt.Sprintf("%s/%d", memberURL, d.MemberId)
+	dto := d.ToPatchDto()
 	data, err := json.Marshal(dto)
 	if err != nil {
 		log.Println("PatchMember json marshal err: ", err)
@@ -180,18 +182,18 @@ func (r Requester) PatchMember(ctx context.Context, d domain.Member) error {
 	return nil
 }
 
-func (r Requester) GetMemberByCafeMemberId(ctx context.Context, cafeId int, memberId int) (domain.Member, error) {
+func (r Requester) GetMemberByCafeMemberId(ctx context.Context, cafeId int, memberId int) (res.GetMemberByCafeMemberId, error) {
 	reqUrl := fmt.Sprintf("%s/%d", memberURL, memberId)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetMemberByCafeMemberId NewRequest err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetMemberByCafeMemberId{}, errors.New(InternalServerError)
 	}
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetMemberByCafeMemberId DefaultClient.Do err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetMemberByCafeMemberId{}, errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
 
@@ -199,51 +201,50 @@ func (r Requester) GetMemberByCafeMemberId(ctx context.Context, cafeId int, memb
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("GetMemberByCafeMemberId readBody err: ", err)
-			return domain.Member{}, errors.New(InternalServerError)
+			return res.GetMemberByCafeMemberId{}, errors.New(InternalServerError)
 		}
-		return domain.Member{}, errors.New(string(readBody))
+		return res.GetMemberByCafeMemberId{}, errors.New(string(readBody))
 	}
 
-	var dto dto2.MemberInfoDto
+	var dto res.GetMemberByCafeMemberId
 	err = json.NewDecoder(resp.Body).Decode(&dto)
 	if err != nil {
 		log.Println("GetMemberByCafeMemberId json.NewDecoder err: ", err)
-		return domain.Member{}, errors.New(InternalServerError)
+		return res.GetMemberByCafeMemberId{}, errors.New(InternalServerError)
 	}
-	mDomain := dto.ToDomain()
-	return mDomain, nil
+	return dto, nil
 }
 
-func (r Requester) GetMemberListByMemberIds(ctx context.Context, ids []int) ([]domain.Member, error) {
+func (r Requester) GetMemberListByMemberIds(ctx context.Context, ids []int) ([]res.GetMemberListByMemberIds, error) {
 	idsStr := arrayToString(ids, ",")
 	reqUrl := fmt.Sprintf("%s/admin?memberIds=%s", memberURL, idsStr)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetMemberListByMemberIds NewRequest err: ", err)
-		return []domain.Member{}, errors.New(InternalServerError)
+		return []res.GetMemberListByMemberIds{}, errors.New(InternalServerError)
 	}
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetMemberListByMemberIds DefaultClient err: ", err)
-		return []domain.Member{}, errors.New(InternalServerError)
+		return []res.GetMemberListByMemberIds{}, errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("GetMemberListByMemberIds readAll err: ", err)
-			return []domain.Member{}, errors.New(InternalServerError)
+			return []res.GetMemberListByMemberIds{}, errors.New(InternalServerError)
 		}
-		return []domain.Member{}, errors.New(string(readBody))
+		return []res.GetMemberListByMemberIds{}, errors.New(string(readBody))
 	}
-	var list []dto2.MemberInfoDto
+	var list []res.GetMemberListByMemberIds
 	err = json.NewDecoder(resp.Body).Decode(&list)
 	if err != nil {
 		log.Println("GetMemberListByMemberIds decode err: ", err)
-		return []domain.Member{}, errors.New(InternalServerError)
+		return []res.GetMemberListByMemberIds{}, errors.New(InternalServerError)
 	}
-	return dto2.ToMemberDomainList(list), nil
+	return list, nil
 }
 
 func arrayToString(a []int, delim string) string {
