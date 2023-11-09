@@ -13,7 +13,8 @@ import (
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
 	handler2 "cafe/internal/deco/handler"
-	"cafe/internal/repository"
+	ban3 "cafe/internal/repository/ban"
+	cafe3 "cafe/internal/repository/cafe"
 	"cafe/internal/repository/infla"
 	ban2 "cafe/internal/service/ban"
 	boardType2 "cafe/internal/service/boardType"
@@ -63,8 +64,8 @@ func main() {
 }
 
 var boardTypeController = boardType.NewController(boardType2.NewService(boardType3.NewRequester()))
-var banController = ban.NewController(ban2.NewService(repository.NewBanRepository(infla.NewDB())))
-var cafeController = cafe2.NewCafeController(cafe.NewService(repository.NewRepository(infla.NewDB())))
+var banController = ban.NewController(ban2.NewService(ban3.NewBanRepository(infla.NewDB())))
+var cafeController = cafe2.NewCafeController(cafe.NewService(cafe3.NewRepository(infla.NewDB())))
 var memberController = member.NewController(member2.NewService(member3.NewRequester()))
 var roleController = cafeRole.NewController(role.NewService(cafeRole2.NewRequester()))
 var memberRoleController = memberRole.NewController(memberRole2.NewService(memberRole3.NewRequester()))

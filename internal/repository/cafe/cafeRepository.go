@@ -1,11 +1,11 @@
-package repository
+package cafe
 
 import (
 	"cafe/internal/domain/cafe"
 	"cafe/internal/domain/cafe/vo"
 	page2 "cafe/internal/page"
-	"cafe/internal/repository/model"
-	"cafe/internal/repository/request"
+	"cafe/internal/repository/cafe/model"
+	"cafe/internal/repository/cafe/request"
 	"context"
 	"errors"
 	"github.com/uptrace/bun"

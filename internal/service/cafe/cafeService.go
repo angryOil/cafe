@@ -4,8 +4,8 @@ import (
 	"cafe/internal/domain/cafe"
 	"cafe/internal/domain/cafe/vo"
 	page2 "cafe/internal/page"
-	"cafe/internal/repository"
-	request2 "cafe/internal/repository/request"
+	cafe2 "cafe/internal/repository/cafe"
+	request2 "cafe/internal/repository/cafe/request"
 	"cafe/internal/service/cafe/request"
 	"cafe/internal/service/cafe/response"
 	"context"
@@ -15,10 +15,10 @@ import (
 )
 
 type Service struct {
-	repo repository.CafeRepository
+	repo cafe2.CafeRepository
 }
 
-func NewService(repo repository.CafeRepository) Service {
+func NewService(repo cafe2.CafeRepository) Service {
 	return Service{repo: repo}
 }
 

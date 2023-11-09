@@ -2,7 +2,7 @@ package model
 
 import (
 	"cafe/internal/domain/cafe"
-	"cafe/internal/repository/request"
+	"cafe/internal/repository/cafe/request"
 	"github.com/uptrace/bun"
 	"time"
 )

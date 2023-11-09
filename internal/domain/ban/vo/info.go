@@ -1,8 +1,8 @@
-package domain
+package vo
 
 import "time"
 
-type Ban struct {
+type Info struct {
 	Id          int
 	UserId      int
 	MemberId    int
