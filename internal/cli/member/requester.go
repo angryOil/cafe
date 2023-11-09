@@ -2,7 +2,6 @@ package member
 
 import (
 	"bytes"
-	dto2 "cafe/internal/cli/member/dto"
 	"cafe/internal/cli/member/req"
 	"cafe/internal/cli/member/res"
 	"cafe/internal/domain"
@@ -88,7 +87,7 @@ func (r Requester) GetCafeIdsAndTotalByUserId(ctx context.Context, userId int, r
 
 func (r Requester) JoinCafe(ctx context.Context, d req.JoinCafe) error {
 	reqUrl := fmt.Sprintf("%s/%d/join/%d", memberURL, d.CafeId, d.UserId)
-	jd := dto2.ToJoinMemberDto(d)
+	jd := d.ToJoinDto()
 	data, err := json.Marshal(jd)
 	if err != nil {
 		log.Println("JoinCafe json.Marshal err: ", err)
