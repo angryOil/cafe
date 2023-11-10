@@ -2,8 +2,11 @@ package boardType
 
 import (
 	"cafe/internal/cli/boardType"
-	"cafe/internal/domain"
+	req2 "cafe/internal/cli/boardType/req"
+	boardType2 "cafe/internal/domain/boardType"
 	page2 "cafe/internal/page"
+	"cafe/internal/service/boardType/req"
+	"cafe/internal/service/boardType/res"
 	"context"
 )
 
@@ -17,18 +20,59 @@ func NewService(r boardType.Requester) Service {
 	}
 }
 
-func (s Service) GetList(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]domain.BoardType, int, error) {
+func (s Service) GetList(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]res.GetList, int, error) {
 	domains, total, err := s.r.GetList(ctx, cafeId, reqPage)
-	return domains, total, err
+	if err != nil {
+		return []res.GetList{}, 0, err
+	}
+	dto := make([]res.GetList, len(domains))
+	for i, d := range domains {
+		v := d.ToInfo()
+		dto[i] = res.GetList{
+			Id:          v.Id,
+			Name:        v.Name,
+			Description: v.Description,
+		}
+	}
+	return dto, total, err
 }
 
-func (s Service) Create(ctx context.Context, typeDomain domain.BoardType) error {
-	err := s.r.Create(ctx, typeDomain)
+func (s Service) Create(ctx context.Context, c req.Create) error {
+	err := boardType2.NewBuilder().
+		CreateBy(c.OwnerId).
+		Name(c.Name).
+		Description(c.Description).
+		CafeId(c.CafeId).
+		Build().ValidCreate()
+	if err != nil {
+		return err
+	}
+
+	err = s.r.Create(ctx, req2.Create{
+		Name:        c.Name,
+		Description: c.Description,
+		CafeId:      c.CafeId,
+		OwnerId:     c.OwnerId,
+	})
 	return err
 }
 
-func (s Service) Patch(ctx context.Context, d domain.BoardType) error {
-	err := s.r.Patch(ctx, d)
+func (s Service) Patch(ctx context.Context, p req.Patch) error {
+	err := boardType2.NewBuilder().
+		Id(p.Id).
+		CafeId(p.CafeId).
+		Name(p.Name).
+		Description(p.Description).
+		Build().ValidUpdate()
+	if err != nil {
+		return err
+	}
+	err = s.r.Patch(ctx, req2.Patch{
+		Id:          p.Id,
+		CafeId:      p.CafeId,
+		Name:        p.Name,
+		Description: p.Description,
+	})
 	return err
 }
 
