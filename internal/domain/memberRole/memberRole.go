@@ -17,6 +17,7 @@ type MemberRole interface {
 
 type memberRole struct {
 	id          int
+	cafeId      int
 	cafeRoleIds string
 	memberId    int
 }

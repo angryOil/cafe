@@ -90,7 +90,7 @@ func (r Requester) GetOneMemberRoles(ctx context.Context, cafeId int, memberId i
 }
 
 func (r Requester) PutRole(ctx context.Context, p req.PutRole) error {
-	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, p.CafeId, p.MemberId)
+	reqUrl := fmt.Sprintf("%s/%d/%d/%d", baseUrl, p.CafeId, p.MemberId, p.Id)
 	cDto := p.ToDto()
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(cDto)
@@ -146,6 +146,40 @@ func (r Requester) Delete(ctx context.Context, cafeId int, memberId int, mRoleId
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("readBody err: ", err)
+			return errors.New("internal server error")
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
+
+func (r Requester) Create(ctx context.Context, c req.CreateRole) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, c.CafeId, c.MemberId)
+	cDto := c.ToDto()
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(cDto)
+	if err != nil {
+		log.Println("Create json.NewEncoder err: ", err)
+		return errors.New("internal server error")
+	}
+
+	re, err := http.NewRequest("POST", reqUrl, &buf)
+	if err != nil {
+		log.Println("Create NewRequest err: ", err)
+		return errors.New("internal server error")
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Create DefaultClient.Do err: ", err)
+		return errors.New("internal server error")
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Create readBody err: ", err)
 			return errors.New("internal server error")
 		}
 		return errors.New(string(readBody))

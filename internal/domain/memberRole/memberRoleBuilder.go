@@ -8,6 +8,7 @@ func NewBuilder() Builder {
 
 type Builder interface {
 	Id(id int) Builder
+	CafeId(cafeId int) Builder
 	CafeRoleIds(cafeRoleIds string) Builder
 	MemberId(memberId int) Builder
 	Build() MemberRole
@@ -15,8 +16,14 @@ type Builder interface {
 
 type builder struct {
 	id          int
+	cafeId      int
 	cafeRoleIds string
 	memberId    int
+}
+
+func (b *builder) CafeId(cafeId int) Builder {
+	b.cafeId = cafeId
+	return b
 }
 
 func (b *builder) Id(id int) Builder {

@@ -1,7 +1,6 @@
 package req
 
-type PutRole struct {
-	Id          int
+type CreateRole struct {
 	CafeId      int
 	MemberId    int
 	CafeRoleIds string

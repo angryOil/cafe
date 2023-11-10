@@ -44,8 +44,9 @@ func (c Controller) GetOneMemberRoles(ctx context.Context, cafeId int, memberId 
 	}, nil
 }
 
-func (c Controller) PutRole(ctx context.Context, cafeId, memberId int, putDto req2.PutMemberRoleDto) error {
+func (c Controller) PutRole(ctx context.Context, id, cafeId, memberId int, putDto req2.PutMemberRoleDto) error {
 	err := c.s.PutRole(ctx, req.PutRole{
+		Id:          id,
 		CafeId:      cafeId,
 		MemberId:    memberId,
 		CafeRoleIds: putDto.CafeRoleIds,
@@ -55,5 +56,14 @@ func (c Controller) PutRole(ctx context.Context, cafeId, memberId int, putDto re
 
 func (c Controller) Delete(ctx context.Context, cafeId int, memberId int, mRoleId int) error {
 	err := c.s.Delete(ctx, cafeId, memberId, mRoleId)
+	return err
+}
+
+func (c Controller) Create(ctx context.Context, cafeId int, memberId int, dto req2.CreateRoleDto) error {
+	err := c.s.CreateRole(ctx, req.CreateRole{
+		CafeId:      cafeId,
+		MemberId:    memberId,
+		CafeRoleIds: dto.CafeRoleIds,
+	})
 	return err
 }
