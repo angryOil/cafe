@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"cafe/internal/cli/memberRole/cDto"
 	"cafe/internal/controller/cafe"
+	res3 "cafe/internal/controller/cafe/res"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/cafeRole/res"
 	"cafe/internal/controller/member"
@@ -32,6 +32,7 @@ func NewMemberRoleHandler(cafeCon cafe.Controller, memCon member.Controller, cRo
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles", h.getMembersRoles).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.getOneMemberRoles).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}/{mRoleId:[0-9]+}", h.delete).Methods(http.MethodDelete)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.upsert).Methods(http.MethodPut)
 	return r
 }
 
@@ -67,7 +68,7 @@ func (h MemberRoleHandler) getOneMemberRoles(w http.ResponseWriter, r *http.Requ
 	}
 
 	roleArr := make([]res2.Role, 0)
-	for mId := range memberIdsArr {
+	for _, mId := range memberIdsArr {
 		role, ok := roleMap[mId]
 		if !ok {
 			continue
@@ -135,7 +136,7 @@ func (h MemberRoleHandler) getMembersRoles(w http.ResponseWriter, r *http.Reques
 	for _, m := range mRoleDetailDtos {
 		roleDtos := make([]res2.Role, 0)
 		intArr := stringToIntArr(m.CafeRoleIds)
-		for i := range intArr {
+		for _, i := range intArr {
 			cRole, ok := cafeRoleDtoMap[i]
 			if !ok {
 				continue
@@ -148,7 +149,7 @@ func (h MemberRoleHandler) getMembersRoles(w http.ResponseWriter, r *http.Reques
 		mRoleArrDto = append(mRoleArrDto, m.ToRoleArrDto(roleDtos))
 	}
 
-	data, err := json.Marshal(cDto.NewListTotalDto(mRoleArrDto, memberTotalCount))
+	data, err := json.Marshal(res3.NewListTotalDto(mRoleArrDto, memberTotalCount))
 	if err != nil {
 		log.Println("getMembersRoles json.Marshal err: ", err)
 		http.Error(w, "server internal error", http.StatusInternalServerError)

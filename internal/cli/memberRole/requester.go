@@ -2,8 +2,9 @@ package memberRole
 
 import (
 	"bytes"
-	"cafe/internal/cli/memberRole/cDto"
-	"cafe/internal/domain"
+	"cafe/internal/cli/memberRole/model"
+	"cafe/internal/cli/memberRole/req"
+	"cafe/internal/domain/memberRole"
 	page2 "cafe/internal/page"
 	"context"
 	"encoding/json"
@@ -23,17 +24,17 @@ func NewRequester() Requester {
 	return Requester{}
 }
 
-func (r Requester) GetRolesByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]domain.MemberRole, int, error) {
+func (r Requester) GetRolesByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]memberRole.MemberRole, int, error) {
 	reqUrl := fmt.Sprintf("%s/%d?page=%d&size=%d", baseUrl, cafeId, reqPage.Page, reqPage.Size)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetRolesByCafeId NewRequest err: ", err)
-		return []domain.MemberRole{}, 0, errors.New("internal server error")
+		return []memberRole.MemberRole{}, 0, errors.New("internal server error")
 	}
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetRolesByCafeId DefaultClient err: ", err)
-		return []domain.MemberRole{}, 0, errors.New("internal server error")
+		return []memberRole.MemberRole{}, 0, errors.New("internal server error")
 	}
 	defer resp.Body.Close()
 
@@ -41,32 +42,32 @@ func (r Requester) GetRolesByCafeId(ctx context.Context, cafeId int, reqPage pag
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("GetRolesByCafeId readBody err: ", err)
-			return []domain.MemberRole{}, 0, errors.New("internal server error")
+			return []memberRole.MemberRole{}, 0, errors.New("internal server error")
 		}
-		return []domain.MemberRole{}, 0, errors.New(string(readBody))
+		return []memberRole.MemberRole{}, 0, errors.New(string(readBody))
 	}
 
-	var listTotalDto cDto.ListTotalDto[cDto.MemberDetailRole]
+	var listTotalDto model.ListTotalDto
 	err = json.NewDecoder(resp.Body).Decode(&listTotalDto)
 	if err != nil {
 		log.Println("GetRolesByCafeId NewDecoder err: ", err)
-		return []domain.MemberRole{}, 0, errors.New("internal server error")
+		return []memberRole.MemberRole{}, 0, errors.New("internal server error")
 	}
 
-	return cDto.ToDomainList(listTotalDto.Contents), listTotalDto.Total, nil
+	return model.ToDomainList(listTotalDto.Contents), listTotalDto.Total, nil
 }
 
-func (r Requester) GetOneMemberRoles(ctx context.Context, cafeId int, memberId int) (domain.MemberRole, error) {
+func (r Requester) GetOneMemberRoles(ctx context.Context, cafeId int, memberId int) (memberRole.MemberRole, error) {
 	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, cafeId, memberId)
 	re, err := http.NewRequest("GET", reqUrl, nil)
 	if err != nil {
 		log.Println("GetOneMemberRoles NewRequest err: ", err)
-		return domain.MemberRole{}, errors.New("internal server error")
+		return memberRole.NewBuilder().Build(), errors.New("internal server error")
 	}
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
 		log.Println("GetOneMemberRoles DefaultClient err: ", err)
-		return domain.MemberRole{}, errors.New("internal server error")
+		return memberRole.NewBuilder().Build(), errors.New("internal server error")
 	}
 	defer resp.Body.Close()
 
@@ -74,23 +75,23 @@ func (r Requester) GetOneMemberRoles(ctx context.Context, cafeId int, memberId i
 		readBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			log.Println("GetOneMemberRoles readBody err: ", err)
-			return domain.MemberRole{}, errors.New("internal server error")
+			return memberRole.NewBuilder().Build(), errors.New("internal server error")
 		}
-		return domain.MemberRole{}, errors.New(string(readBody))
+		return memberRole.NewBuilder().Build(), errors.New(string(readBody))
 	}
 
-	var d cDto.MemberRole
-	err = json.NewDecoder(resp.Body).Decode(&d)
+	var m model.MemberRole
+	err = json.NewDecoder(resp.Body).Decode(&m)
 	if err != nil {
 		log.Println("GetOneMemberRoles json.NewDecoder err: ", err)
-		return domain.MemberRole{}, errors.New("internal server error")
+		return memberRole.NewBuilder().Build(), errors.New("internal server error")
 	}
-	return d.ToDomain(), nil
+	return m.ToDomain(), nil
 }
 
-func (r Requester) PutRole(ctx context.Context, cafeId int, memberId int, d domain.MemberRole) error {
-	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, cafeId, memberId)
-	cDto := cDto.ToPutMemberRoleCDto(d)
+func (r Requester) PutRole(ctx context.Context, p req.PutRole) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, p.CafeId, p.MemberId)
+	cDto := p.ToDto()
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(cDto)
 	if err != nil {
