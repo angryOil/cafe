@@ -1,37 +1,76 @@
 package ban
 
 import (
-	"cafe/internal/domain"
+	"cafe/internal/domain/ban"
 	page2 "cafe/internal/page"
-	"cafe/internal/repository"
+	ban2 "cafe/internal/repository/ban"
+	req2 "cafe/internal/repository/ban/req"
+	"cafe/internal/service/ban/req"
+	"cafe/internal/service/ban/res"
 	"context"
-	"errors"
+	"time"
 )
 
 type Service struct {
-	repo repository.BanRepository
+	repo ban2.BanRepository
 }
 
-func NewService(repo repository.BanRepository) Service {
+func NewService(repo ban2.BanRepository) Service {
 	return Service{
 		repo: repo,
 	}
 }
 
-func (s Service) CreateBan(ctx context.Context, bDomain domain.Ban) error {
-	if bDomain.MemberId == 0 {
-		return errors.New("invalid member id")
+func (s Service) CreateBan(ctx context.Context, c req.CreateBan) error {
+	userId, memberId, cafeId := c.UserId, c.MemberId, c.CafeId
+	description := c.Description
+	createdAt := time.Now()
+
+	err := ban.NewBuilder().
+		UserId(userId).
+		MemberId(memberId).
+		CafeId(cafeId).
+		Description(description).
+		CreatedAt(createdAt).
+		Build().ValidCreate()
+	if err != nil {
+		return err
 	}
-	err := s.repo.Create(ctx, bDomain)
+
+	err = s.repo.Create(ctx, req2.Create{
+		UserId:      userId,
+		MemberId:    memberId,
+		CafeId:      cafeId,
+		Description: description,
+		CreatedAt:   createdAt,
+	})
 	return err
 }
 
-func (s Service) GetBanListAndCountByUserId(ctx context.Context, userId int, reqPage page2.ReqPage) ([]domain.Ban, int, error) {
+func (s Service) GetBanListAndCountByUserId(ctx context.Context, userId int, reqPage page2.ReqPage) ([]res.GetBanListAndCountByUserId, int, error) {
 	domains, count, err := s.repo.GetListCountByUserId(ctx, userId, reqPage)
-	return domains, count, err
+	result := make([]res.GetBanListAndCountByUserId, len(domains))
+	for i, d := range domains {
+		v := d.ToInfo()
+		result[i] = res.GetBanListAndCountByUserId{
+			Id:          v.Id,
+			CafeId:      v.CafeId,
+			Description: v.Description,
+		}
+	}
+	return result, count, err
 }
 
-func (s Service) GetBanListByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]domain.Ban, int, error) {
+func (s Service) GetBanListByCafeId(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]res.GetBanListByCafeId, int, error) {
 	domains, count, err := s.repo.GetListCountByCafeId(ctx, cafeId, reqPage)
-	return domains, count, err
+	result := make([]res.GetBanListByCafeId, len(domains))
+	for i, d := range domains {
+		v := d.ToInfo()
+		result[i] = res.GetBanListByCafeId{
+			Id:          v.Id,
+			MemberId:    v.MemberId,
+			Description: v.Description,
+		}
+	}
+	return result, count, err
 }

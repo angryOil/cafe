@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"cafe/internal/cli/memberRole/cDto"
-	"cafe/internal/controller"
+	"cafe/internal/controller/cafe"
+	res3 "cafe/internal/controller/cafe/res"
 	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/cafeRole/res"
 	"cafe/internal/controller/member"
@@ -19,19 +19,21 @@ import (
 )
 
 type MemberRoleHandler struct {
-	cafeCon  controller.CafeController //
+	cafeCon  cafe.Controller //
 	memCon   member.Controller
 	cRoleCon cafeRole.Controller
 	mRoleCon memberRole.Controller
 }
 
-func NewMemberRoleHandler(cafeCon controller.CafeController, memCon member.Controller, cRoleCon cafeRole.Controller, mRoleCon memberRole.Controller) http.Handler {
+func NewMemberRoleHandler(cafeCon cafe.Controller, memCon member.Controller, cRoleCon cafeRole.Controller, mRoleCon memberRole.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := MemberRoleHandler{cafeCon: cafeCon, memCon: memCon, mRoleCon: mRoleCon}
 	// 카페 전체인원관련 권한 확인
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles", h.getMembersRoles).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.getOneMemberRoles).Methods(http.MethodGet)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}", h.createRole).Methods(http.MethodPost)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}/{mRoleId:[0-9]+}", h.delete).Methods(http.MethodDelete)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/member-roles/{memberId:[0-9]+}/{mRoleId:[0-9]+}", h.put).Methods(http.MethodPut)
 	return r
 }
 
@@ -67,7 +69,7 @@ func (h MemberRoleHandler) getOneMemberRoles(w http.ResponseWriter, r *http.Requ
 	}
 
 	roleArr := make([]res2.Role, 0)
-	for mId := range memberIdsArr {
+	for _, mId := range memberIdsArr {
 		role, ok := roleMap[mId]
 		if !ok {
 			continue
@@ -135,7 +137,7 @@ func (h MemberRoleHandler) getMembersRoles(w http.ResponseWriter, r *http.Reques
 	for _, m := range mRoleDetailDtos {
 		roleDtos := make([]res2.Role, 0)
 		intArr := stringToIntArr(m.CafeRoleIds)
-		for i := range intArr {
+		for _, i := range intArr {
 			cRole, ok := cafeRoleDtoMap[i]
 			if !ok {
 				continue
@@ -148,7 +150,7 @@ func (h MemberRoleHandler) getMembersRoles(w http.ResponseWriter, r *http.Reques
 		mRoleArrDto = append(mRoleArrDto, m.ToRoleArrDto(roleDtos))
 	}
 
-	data, err := json.Marshal(cDto.NewListTotalDto(mRoleArrDto, memberTotalCount))
+	data, err := json.Marshal(res3.NewListTotalDto(mRoleArrDto, memberTotalCount))
 	if err != nil {
 		log.Println("getMembersRoles json.Marshal err: ", err)
 		http.Error(w, "server internal error", http.StatusInternalServerError)
@@ -172,7 +174,7 @@ func stringToIntArr(s string) []int {
 	return intArr
 }
 
-func (h MemberRoleHandler) upsert(w http.ResponseWriter, r *http.Request) {
+func (h MemberRoleHandler) put(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
@@ -210,13 +212,19 @@ func (h MemberRoleHandler) upsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	mRoleId, err := strconv.Atoi(vars["mRoleId"])
+	if err != nil {
+		http.Error(w, "invalid member role", http.StatusBadRequest)
+		return
+	}
+
 	var d req2.PutMemberRoleDto
 	err = json.NewDecoder(r.Body).Decode(&d)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	err = h.mRoleCon.PutRole(r.Context(), cafeId, memberId, d)
+	err = h.mRoleCon.PutRole(r.Context(), mRoleId, cafeId, memberId, d)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -260,4 +268,56 @@ func (h MemberRoleHandler) delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h MemberRoleHandler) createRole(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, "invalid cafe id", http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, "invalid user id", http.StatusBadRequest)
+		return
+	}
+	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "you do not have permission", http.StatusForbidden)
+		return
+	}
+
+	memberId, err := strconv.Atoi(vars["memberId"])
+	if err != nil {
+		http.Error(w, "invalid member id", http.StatusBadRequest)
+		return
+	}
+
+	var dto req2.CreateRoleDto
+	err = json.NewDecoder(r.Body).Decode(&dto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	ok, err = h.memCon.CheckExistsMemberByMemberId(r.Context(), cafeId, memberId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !ok {
+		http.Error(w, "member not found", http.StatusNotFound)
+		return
+	}
+
+	err = h.mRoleCon.Create(r.Context(), cafeId, memberId, dto)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }

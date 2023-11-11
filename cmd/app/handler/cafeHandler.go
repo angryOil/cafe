@@ -1,8 +1,8 @@
 package handler
 
 import (
-	"cafe/internal/controller"
-	"cafe/internal/controller/req"
+	controller "cafe/internal/controller/cafe"
+	"cafe/internal/controller/cafe/req"
 	page2 "cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -13,10 +13,10 @@ import (
 )
 
 type CafeHandler struct {
-	c controller.CafeController
+	c controller.Controller
 }
 
-func NewCafeHandler(c controller.CafeController) http.Handler {
+func NewCafeHandler(c controller.Controller) http.Handler {
 	m := mux.NewRouter()
 	h := CafeHandler{c: c}
 	// 전체 카페를 조회

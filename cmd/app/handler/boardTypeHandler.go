@@ -1,10 +1,10 @@
 package handler
 
 import (
-	"cafe/internal/controller"
 	"cafe/internal/controller/boardType"
 	"cafe/internal/controller/boardType/req"
-	"cafe/internal/controller/res"
+	"cafe/internal/controller/cafe"
+	"cafe/internal/controller/cafe/res"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -16,10 +16,10 @@ import (
 
 type BoardTypeHandler struct {
 	typeCon boardType.Controller
-	cafeCon controller.CafeController
+	cafeCon cafe.Controller
 }
 
-func NewBoardTypeHandler(typeCon boardType.Controller, cafeCon controller.CafeController) http.Handler {
+func NewBoardTypeHandler(typeCon boardType.Controller, cafeCon cafe.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := BoardTypeHandler{typeCon: typeCon, cafeCon: cafeCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/board-types", h.getBoardList).Methods(http.MethodGet)

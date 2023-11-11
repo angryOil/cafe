@@ -1,13 +1,13 @@
 package handler
 
 import (
-	"cafe/internal/controller"
 	"cafe/internal/controller/ban"
 	"cafe/internal/controller/ban/req"
 	res2 "cafe/internal/controller/ban/res"
+	"cafe/internal/controller/cafe"
+	"cafe/internal/controller/cafe/res"
 	"cafe/internal/controller/member"
 	res3 "cafe/internal/controller/member/res"
-	"cafe/internal/controller/res"
 	page2 "cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -18,12 +18,12 @@ import (
 )
 
 type BanHandler struct {
-	cafeCon   controller.CafeController
+	cafeCon   cafe.Controller
 	memberCon member.Controller
 	banCon    ban.Controller
 }
 
-func NewBanHandler(banCon ban.Controller, memberCon member.Controller, cafeCon controller.CafeController) http.Handler {
+func NewBanHandler(banCon ban.Controller, memberCon member.Controller, cafeCon cafe.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := BanHandler{
 		cafeCon:   cafeCon,
@@ -75,6 +75,10 @@ func (h BanHandler) createBan(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if strings.Contains(err.Error(), "invalid") {
 			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
 			return
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)

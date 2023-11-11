@@ -1,7 +1,5 @@
 package res
 
-import "cafe/internal/domain"
-
 type MemberRoleDto struct {
 	Id          int    `json:"id"`
 	CafeRoleIds string `json:"cafe_role_ids"`
@@ -19,29 +17,10 @@ func (m MemberRoleDto) ToRoleArrDto(roles []Role) RoleArrDto {
 	}
 }
 
-func ToMemberRoleDto(d domain.MemberRole) MemberRoleDto {
-	return MemberRoleDto{
-		Id:          d.Id,
-		CafeRoleIds: d.CafeRoleIds,
-	}
-}
-
 type DetailDto struct {
 	Id          int    `json:"id"`
 	CafeRoleIds string `json:"cafe_role_ids"`
 	MemberId    int    `json:"member_id"`
-}
-
-func ToDetailList(domains []domain.MemberRole) []DetailDto {
-	results := make([]DetailDto, len(domains))
-	for i, d := range domains {
-		results[i] = DetailDto{
-			Id:          d.Id,
-			CafeRoleIds: d.CafeRoleIds,
-			MemberId:    d.MemberId,
-		}
-	}
-	return results
 }
 
 type Role struct {
