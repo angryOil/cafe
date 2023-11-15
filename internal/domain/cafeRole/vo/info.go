@@ -1,6 +1,6 @@
-package domain
+package vo
 
-type CafeRole struct {
+type Info struct {
 	Id          int
 	CafeId      int
 	Name        string

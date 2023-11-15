@@ -1,23 +1,21 @@
-package boardType
+package cafeRole
 
 import (
-	"cafe/internal/cli/boardType"
-	req2 "cafe/internal/cli/boardType/req"
-	boardType2 "cafe/internal/domain/boardType"
+	"cafe/internal/cli/cafeRole"
+	req2 "cafe/internal/cli/cafeRole/req"
+	cafeRole2 "cafe/internal/domain/cafeRole"
 	page2 "cafe/internal/page"
-	"cafe/internal/service/boardType/req"
-	"cafe/internal/service/boardType/res"
+	"cafe/internal/service/cafeRole/req"
+	"cafe/internal/service/cafeRole/res"
 	"context"
 )
 
 type Service struct {
-	r boardType.Requester
+	r cafeRole.Requester
 }
 
-func NewService(r boardType.Requester) Service {
-	return Service{
-		r: r,
-	}
+func NewService(r cafeRole.Requester) Service {
+	return Service{r: r}
 }
 
 func (s Service) GetList(ctx context.Context, cafeId int, reqPage page2.ReqPage) ([]res.GetList, int, error) {
@@ -38,27 +36,24 @@ func (s Service) GetList(ctx context.Context, cafeId int, reqPage page2.ReqPage)
 }
 
 func (s Service) Create(ctx context.Context, c req.Create) error {
-	err := boardType2.NewBuilder().
-		CreateBy(c.OwnerId).
+	err := cafeRole2.NewBuilder().
+		CafeId(c.CafeId).
 		Name(c.Name).
 		Description(c.Description).
-		CafeId(c.CafeId).
 		Build().ValidCreate()
 	if err != nil {
 		return err
 	}
-
 	err = s.r.Create(ctx, req2.Create{
+		CafeId:      c.CafeId,
 		Name:        c.Name,
 		Description: c.Description,
-		CafeId:      c.CafeId,
-		OwnerId:     c.OwnerId,
 	})
 	return err
 }
 
 func (s Service) Patch(ctx context.Context, p req.Patch) error {
-	err := boardType2.NewBuilder().
+	err := cafeRole2.NewBuilder().
 		Id(p.Id).
 		CafeId(p.CafeId).
 		Name(p.Name).
@@ -67,7 +62,6 @@ func (s Service) Patch(ctx context.Context, p req.Patch) error {
 	if err != nil {
 		return err
 	}
-
 	err = s.r.Patch(ctx, req2.Patch{
 		Id:          p.Id,
 		CafeId:      p.CafeId,
@@ -77,7 +71,7 @@ func (s Service) Patch(ctx context.Context, p req.Patch) error {
 	return err
 }
 
-func (s Service) Delete(ctx context.Context, cafeId int, typeId int) error {
-	err := s.r.Delete(ctx, cafeId, typeId)
+func (s Service) Delete(ctx context.Context, cafeId int, roleId int) error {
+	err := s.r.Delete(ctx, cafeId, roleId)
 	return err
 }

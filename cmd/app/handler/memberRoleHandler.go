@@ -214,7 +214,7 @@ func (h MemberRoleHandler) put(w http.ResponseWriter, r *http.Request) {
 
 	mRoleId, err := strconv.Atoi(vars["mRoleId"])
 	if err != nil {
-		http.Error(w, "invalid member role", http.StatusBadRequest)
+		http.Error(w, "invalid member cafeRole", http.StatusBadRequest)
 		return
 	}
 
@@ -240,7 +240,7 @@ func (h MemberRoleHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 	mRoleId, err := strconv.Atoi(vars["mRoleId"])
 	if err != nil {
-		http.Error(w, "invalid member role id", http.StatusBadRequest)
+		http.Error(w, "invalid member cafeRole id", http.StatusBadRequest)
 		return
 	}
 	memberId, err := strconv.Atoi(vars["memberId"])
