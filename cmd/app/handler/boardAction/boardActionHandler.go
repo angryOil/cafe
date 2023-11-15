@@ -2,6 +2,7 @@ package boardAction
 
 import (
 	"cafe/internal/controller/boardAction"
+	"cafe/internal/controller/boardAction/req"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"log"
@@ -60,11 +61,62 @@ func (h BoardActionHandler) getInfo(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h BoardActionHandler) create(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	boardTypeId, err := strconv.Atoi(vars["typeId"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	var d req.Create
+	err = json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.c.Create(r.Context(), cafeId, boardTypeId, d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusCreated)
 }
 
 func (h BoardActionHandler) patch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	boardTypeId, err := strconv.Atoi(vars["typeId"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
+	var p req.Patch
+	err = json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.c.Patch(r.Context(), cafeId, boardTypeId, id, p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h BoardActionHandler) delete(w http.ResponseWriter, r *http.Request) {

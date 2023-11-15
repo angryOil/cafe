@@ -1,8 +1,10 @@
 package boardAction
 
 import (
+	"cafe/internal/controller/boardAction/req"
 	"cafe/internal/controller/boardAction/res"
 	"cafe/internal/service/boardAction"
+	req2 "cafe/internal/service/boardAction/req"
 	"context"
 )
 
@@ -29,4 +31,31 @@ func (c Controller) GetInfo(ctx context.Context, cafeId, boardTypeId int) (res.G
 		UpdateAble:  d.UpdateAble,
 		DeleteRoles: d.DeleteRoles,
 	}, nil
+}
+
+func (c Controller) Create(ctx context.Context, cafeId int, boardTypeId int, d req.Create) error {
+	err := c.s.Create(ctx, req2.Create{
+		CafeId:      cafeId,
+		BoardType:   boardTypeId,
+		ReadRoles:   d.ReadRoles,
+		CreateRoles: d.CreateRoles,
+		UpdateRoles: d.UpdateRoles,
+		UpdateAble:  d.UpdateAble,
+		DeleteRoles: d.DeleteRoles,
+	})
+	return err
+}
+
+func (c Controller) Patch(ctx context.Context, cafeId int, boardTypeId int, id int, p req.Patch) error {
+	err := c.s.Patch(ctx, req2.Patch{
+		Id:          id,
+		CafeId:      cafeId,
+		BoardTypeId: boardTypeId,
+		ReadRoles:   p.ReadRoles,
+		CreateRoles: p.CreateRoles,
+		UpdateRoles: p.UpdateRoles,
+		UpdateAble:  p.UpdateAble,
+		DeleteRoles: p.DeleteRoles,
+	})
+	return err
 }
