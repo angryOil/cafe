@@ -74,7 +74,7 @@ func (h CafeHandler) getList(w http.ResponseWriter, r *http.Request) {
 	pageNation := page2.GetPagination(cafeList, reqPage, count)
 	data, err := json.Marshal(pageNation)
 	if err != nil {
-		log.Println("getList marshal err: ", err)
+		log.Println("getInfo marshal err: ", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

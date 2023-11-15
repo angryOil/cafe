@@ -53,7 +53,7 @@ func (h CafeRoleHandler) getList(w http.ResponseWriter, r *http.Request) {
 	}
 	data, err := json.Marshal(res.NewListTotalDto(list, total))
 	if err != nil {
-		log.Println("getList json.Marshal err: ", err)
+		log.Println("getInfo json.Marshal err: ", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -120,7 +120,7 @@ func (h CafeRoleHandler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 	roleId, err := strconv.Atoi(vars["roleId"])
 	if err != nil {
-		http.Error(w, "invalid role id", http.StatusBadRequest)
+		http.Error(w, "invalid cafeRole id", http.StatusBadRequest)
 		return
 	}
 	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)
@@ -172,7 +172,7 @@ func (h CafeRoleHandler) delete(w http.ResponseWriter, r *http.Request) {
 	}
 	roleId, err := strconv.Atoi(vars["roleId"])
 	if err != nil {
-		http.Error(w, "invalid role id", http.StatusBadRequest)
+		http.Error(w, "invalid cafeRole id", http.StatusBadRequest)
 		return
 	}
 	ok, err = h.cafeCon.CheckIsMine(r.Context(), userId, cafeId)

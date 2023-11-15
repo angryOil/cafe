@@ -1,6 +1,6 @@
-package domain
+package req
 
-type CafeRole struct {
+type Patch struct {
 	Id          int
 	CafeId      int
 	Name        string
