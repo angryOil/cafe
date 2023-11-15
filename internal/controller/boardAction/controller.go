@@ -59,3 +59,8 @@ func (c Controller) Patch(ctx context.Context, cafeId int, boardTypeId int, id i
 	})
 	return err
 }
+
+func (c Controller) Delete(ctx context.Context, cafeId int, boardTypeId int, id int) error {
+	err := c.s.Delete(ctx, cafeId, boardTypeId, id)
+	return err
+}

@@ -96,3 +96,8 @@ func (s Service) Patch(ctx context.Context, p req2.Patch) error {
 	})
 	return err
 }
+
+func (s Service) Delete(ctx context.Context, cafeId int, boardTypeId int, id int) error {
+	err := s.r.Delete(ctx, cafeId, boardTypeId, id)
+	return err
+}

@@ -127,3 +127,28 @@ func (r Requester) Patch(ctx context.Context, p req.Patch) error {
 	}
 	return nil
 }
+
+func (r Requester) Delete(ctx context.Context, cafeId int, boardTypeId int, id int) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d/%d", baseUrl, cafeId, boardTypeId, id)
+	re, err := http.NewRequest("DELETE", reqUrl, nil)
+	if err != nil {
+		log.Println("Delete NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Delete DefaultClient.Do err: ", err)
+		return errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Delete readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
