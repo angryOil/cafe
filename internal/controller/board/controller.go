@@ -1,6 +1,7 @@
 package board
 
 import (
+	req2 "cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
 	page2 "cafe/internal/page"
 	"cafe/internal/service/board"
@@ -33,6 +34,17 @@ func (c Controller) GetList(ctx context.Context, cafeId int, boardType int, writ
 		}
 	}
 	return dto, total, nil
+}
+
+func (c Controller) Create(ctx context.Context, cafeId int, boardType int, memberId int, create req2.Create) error {
+	err := c.s.Create(ctx, req.Create{
+		Writer:    memberId,
+		CafeId:    cafeId,
+		BoardType: boardType,
+		Title:     create.Title,
+		Content:   create.Content,
+	})
+	return err
 }
 
 func NewController(s board.Service) Controller {

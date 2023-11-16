@@ -1,6 +1,7 @@
 package board
 
 import (
+	"bytes"
 	"cafe/internal/cli/board/model"
 	req2 "cafe/internal/cli/board/req"
 	"cafe/internal/domain/board"
@@ -54,6 +55,39 @@ func (r Requester) GetList(ctx context.Context, l req2.GetList, reqPage page2.Re
 		return []board.Board{}, 0, errors.New(InternalServerError)
 	}
 	return model.ToDomainList(listTotalDto.Content), listTotalDto.Total, nil
+}
+
+func (r Requester) Create(ctx context.Context, c req2.Create) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, c.CafeId, c.BoardType)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(c.ToCreateDto())
+	if err != nil {
+		log.Println("Create json.NewEncoder err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	re, err := http.NewRequest("POST", reqUrl, &buf)
+	if err != nil {
+		log.Println("Create NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Create DefaultClient.Do err: ", err)
+		return errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Create readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
 }
 
 func NewRequester() Requester {

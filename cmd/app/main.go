@@ -84,7 +84,7 @@ var boardActionController = boardAction.NewController(boardAction2.NewService(bo
 var boardController = board.NewController(board2.NewService(board3.NewRequester()))
 
 func getBoardHandler() http.Handler {
-	return board4.NewHandler(boardController)
+	return board4.NewHandler(boardController, memberController)
 }
 
 func getBoardActionHandler() http.Handler {

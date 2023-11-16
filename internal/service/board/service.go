@@ -3,6 +3,7 @@ package board
 import (
 	"cafe/internal/cli/board"
 	req2 "cafe/internal/cli/board/req"
+	board2 "cafe/internal/domain/board"
 	page2 "cafe/internal/page"
 	"cafe/internal/service/board/req"
 	"cafe/internal/service/board/res"
@@ -11,6 +12,10 @@ import (
 
 type Service struct {
 	r board.Requester
+}
+
+func NewService(r board.Requester) Service {
+	return Service{r: r}
 }
 
 func (s Service) GetList(ctx context.Context, l req.GetList, reqPage page2.ReqPage) ([]res.GetList, int, error) {
@@ -37,6 +42,24 @@ func (s Service) GetList(ctx context.Context, l req.GetList, reqPage page2.ReqPa
 	return dto, total, nil
 }
 
-func NewService(r board.Requester) Service {
-	return Service{r: r}
+func (s Service) Create(ctx context.Context, c req.Create) error {
+	err := board2.NewBuilder().
+		Writer(c.Writer).
+		CafeId(c.CafeId).
+		BoardType(c.BoardType).
+		Title(c.Title).
+		Content(c.Content).
+		Build().ValidCreate()
+	if err != nil {
+		return err
+	}
+
+	err = s.r.Create(ctx, req2.Create{
+		Writer:    c.Writer,
+		CafeId:    c.CafeId,
+		BoardType: c.BoardType,
+		Title:     c.Title,
+		Content:   c.Content,
+	})
+	return err
 }
