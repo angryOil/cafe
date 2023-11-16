@@ -90,6 +90,39 @@ func (r Requester) Create(ctx context.Context, c req2.Create) error {
 	return nil
 }
 
+func (r Requester) Patch(ctx context.Context, p req2.Patch) error {
+	reqUrl := fmt.Sprintf("%s/%d", baseUrl, p.Id)
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(p.ToPatchDto())
+	if err != nil {
+		log.Println("Patch NewEncoder err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	re, err := http.NewRequest("PATCH", reqUrl, &buf)
+	if err != nil {
+		log.Println("Patch NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Patch DefaultClient.Do err: ", err)
+		return errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Patch readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
+
 func NewRequester() Requester {
 	return Requester{}
 }

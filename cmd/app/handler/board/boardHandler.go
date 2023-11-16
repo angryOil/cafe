@@ -5,7 +5,6 @@ import (
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
 	"cafe/internal/controller/member"
-	"cafe/internal/domain/ban"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -24,13 +23,18 @@ func NewHandler(c board.Controller, mCon member.Controller) http.Handler {
 	h := Handler{c: c, mCon: mCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
+	// 실제 작성자인지 확인할 로직이 필요
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.patch).Methods(http.MethodPatch)
 	return r
 }
 
 const (
-	InvalidUserId       = "invalid user id"
-	InvalidBoardType    = "invalid board type"
-	InternalServerError = "internal server error"
+	InvalidUserId        = "invalid user id"
+	InvalidId            = "invalid board id"
+	YouDonHavePermission = "You do not have permission"
+	InvalidCafeId        = "invalid cafe id"
+	InvalidBoardType     = "invalid board type"
+	InternalServerError  = "internal server error"
 )
 
 // 관리자 인가? 관리자일 경우 모든 메소드 허용 cafeCon
@@ -41,7 +45,7 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	reqPage := page.GetPageReqByRequest(r)
@@ -77,7 +81,7 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
-		http.Error(w, ban.InvalidCafeId, http.StatusBadRequest)
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
 	boardType, err := strconv.Atoi(vars["boardType"])
@@ -109,4 +113,41 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, InvalidUserId, http.StatusUnauthorized)
+		return
+	}
+	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var d req.Patch
+	err = json.NewDecoder(r.Body).Decode(&d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	err = h.c.Patch(r.Context(), id, mInfo.Id, d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }

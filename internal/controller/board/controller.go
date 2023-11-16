@@ -47,6 +47,16 @@ func (c Controller) Create(ctx context.Context, cafeId int, boardType int, membe
 	return err
 }
 
+func (c Controller) Patch(ctx context.Context, id int, memberId int, d req2.Patch) error {
+	err := c.s.Patch(ctx, req.Patch{
+		Id:        id,
+		Title:     d.Title,
+		Content:   d.Content,
+		Requester: memberId,
+	})
+	return err
+}
+
 func NewController(s board.Service) Controller {
 	return Controller{s: s}
 }

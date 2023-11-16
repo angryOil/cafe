@@ -63,3 +63,22 @@ func (s Service) Create(ctx context.Context, c req.Create) error {
 	})
 	return err
 }
+
+func (s Service) Patch(ctx context.Context, p req.Patch) error {
+	err := board2.NewBuilder().
+		Id(p.Id).
+		Title(p.Title).
+		Content(p.Content).
+		Build().ValidUpdate()
+	if err != nil {
+		return err
+	}
+
+	err = s.r.Patch(ctx, req2.Patch{
+		Id:        p.Id,
+		Title:     p.Title,
+		Content:   p.Content,
+		Requester: p.Requester,
+	})
+	return err
+}
