@@ -1,0 +1,61 @@
+package board
+
+import (
+	"cafe/internal/cli/board/model"
+	req2 "cafe/internal/cli/board/req"
+	"cafe/internal/domain/board"
+	page2 "cafe/internal/page"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+)
+
+var baseUrl = "http://localhost:8089/boards"
+
+type Requester struct {
+}
+
+const (
+	InternalServerError = "internal server error"
+)
+
+func (r Requester) GetList(ctx context.Context, l req2.GetList, reqPage page2.ReqPage) ([]board.Board, int, error) {
+	reqUrl := fmt.Sprintf("%s/%d?board-type=%d&writer=%d&page=%d&size=%d", baseUrl, l.CafeId, l.BoardType, l.Writer, reqPage.Page, reqPage.Size)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetList NewRequest err: ", err)
+		return []board.Board{}, 0, errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetList DefaultClient.Do err: ", err)
+		return []board.Board{}, 0, errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("GetList readBody err: ", err)
+			return []board.Board{}, 0, errors.New(InternalServerError)
+		}
+		return []board.Board{}, 0, errors.New(string(readBody))
+	}
+
+	var listTotalDto model.BoardListTotalDto
+	err = json.NewDecoder(resp.Body).Decode(&listTotalDto)
+	if err != nil {
+		log.Println("GetList json.NewDecoder err: ", err)
+		return []board.Board{}, 0, errors.New(InternalServerError)
+	}
+	return model.ToDomainList(listTotalDto.Content), listTotalDto.Total, nil
+}
+
+func NewRequester() Requester {
+	return Requester{}
+}
