@@ -57,6 +57,11 @@ func (c Controller) Patch(ctx context.Context, id int, memberId int, d req2.Patc
 	return err
 }
 
+func (c Controller) Delete(ctx context.Context, id int) error {
+	err := c.s.Delete(ctx, id)
+	return err
+}
+
 func NewController(s board.Service) Controller {
 	return Controller{s: s}
 }

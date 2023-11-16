@@ -25,6 +25,7 @@ func NewHandler(c board.Controller, mCon member.Controller) http.Handler {
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
 	// 실제 작성자인지 확인할 로직이 필요
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.patch).Methods(http.MethodPatch)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.delete).Methods(http.MethodDelete)
 	return r
 }
 
@@ -146,6 +147,37 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = h.c.Patch(r.Context(), id, mInfo.Id, d)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	cafeId, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
+		return
+	}
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
+		return
+	}
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, InvalidUserId, http.StatusUnauthorized)
+		return
+	}
+	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	log.Println("my", mInfo)
+	err = h.c.Delete(r.Context(), id)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
