@@ -13,6 +13,10 @@ type Controller struct {
 	s board.Service
 }
 
+func NewController(s board.Service) Controller {
+	return Controller{s: s}
+}
+
 func (c Controller) GetList(ctx context.Context, cafeId int, boardType int, writer int, reqPage page2.ReqPage) ([]res.Info, int, error) {
 	list, total, err := c.s.GetList(ctx, req.GetList{
 		CafeId:    cafeId,
@@ -62,6 +66,18 @@ func (c Controller) Delete(ctx context.Context, id int) error {
 	return err
 }
 
-func NewController(s board.Service) Controller {
-	return Controller{s: s}
+func (c Controller) GetDetail(ctx context.Context, id int) (res.Detail, error) {
+	dto, err := c.s.GetDetail(ctx, id)
+	if err != nil {
+		return res.Detail{}, err
+	}
+	return res.Detail{
+		Id:            dto.Id,
+		BoardType:     dto.BoardType,
+		Writer:        dto.Writer,
+		Title:         dto.Title,
+		Content:       dto.Content,
+		CreatedAt:     dto.CreatedAt,
+		LastUpdatedAt: dto.LastUpdatedAt,
+	}, nil
 }

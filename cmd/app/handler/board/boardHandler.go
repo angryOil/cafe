@@ -22,6 +22,7 @@ func NewHandler(c board.Controller, mCon member.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := Handler{c: c, mCon: mCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
 	// 실제 작성자인지 확인할 로직이 필요
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.patch).Methods(http.MethodPatch)
@@ -182,4 +183,36 @@ func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	// 권한 확인필요
+	//cafeId, err := strconv.Atoi(vars["cafeId"])
+	_, err := strconv.Atoi(vars["cafeId"])
+	if err != nil {
+		http.Error(w, InvalidCafeId, http.StatusBadRequest)
+		return
+	}
+
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, InvalidId, http.StatusBadRequest)
+		return
+	}
+
+	dto, err := h.c.GetDetail(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data, err := json.Marshal(dto)
+	if err != nil {
+		log.Println("getDetail json.Marshal err: ", err)
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(data)
 }

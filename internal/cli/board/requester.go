@@ -24,6 +24,10 @@ const (
 	InternalServerError = "internal server error"
 )
 
+func NewRequester() Requester {
+	return Requester{}
+}
+
 func (r Requester) GetList(ctx context.Context, l req2.GetList, reqPage page2.ReqPage) ([]board.Board, int, error) {
 	reqUrl := fmt.Sprintf("%s/%d?board-type=%d&writer=%d&page=%d&size=%d", baseUrl, l.CafeId, l.BoardType, l.Writer, reqPage.Page, reqPage.Size)
 	re, err := http.NewRequest("GET", reqUrl, nil)
@@ -149,6 +153,35 @@ func (r Requester) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func NewRequester() Requester {
-	return Requester{}
+func (r Requester) GetDetail(ctx context.Context, id int) (board.Board, error) {
+	reqUrl := fmt.Sprintf("%s/%d/detail", baseUrl, id)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetDetail NewRequest err: ", err)
+		return board.NewBuilder().Build(), errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetDetail DefaultClient.Do err: ", err)
+		return board.NewBuilder().Build(), errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("GetDetail readBody err: ", err)
+			return board.NewBuilder().Build(), errors.New(InternalServerError)
+		}
+		return board.NewBuilder().Build(), errors.New(string(readBody))
+	}
+
+	var m model.Board
+	err = json.NewDecoder(resp.Body).Decode(&m)
+	if err != nil {
+		log.Println("GetDetail json.NewDecoder err: ", err)
+		return board.NewBuilder().Build(), errors.New(InternalServerError)
+	}
+	return m.ToDomain(), nil
 }
