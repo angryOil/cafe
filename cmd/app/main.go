@@ -4,12 +4,14 @@ import (
 	"cafe/cmd/app/handler"
 	board4 "cafe/cmd/app/handler/board"
 	boardAction4 "cafe/cmd/app/handler/boardAction"
+	reply4 "cafe/cmd/app/handler/reply"
 	board3 "cafe/internal/cli/board"
 	boardAction3 "cafe/internal/cli/boardAction"
 	boardType3 "cafe/internal/cli/boardType"
 	cafeRole2 "cafe/internal/cli/cafeRole"
 	member3 "cafe/internal/cli/member"
 	memberRole3 "cafe/internal/cli/memberRole"
+	reply3 "cafe/internal/cli/reply"
 	"cafe/internal/controller/ban"
 	"cafe/internal/controller/board"
 	"cafe/internal/controller/boardAction"
@@ -18,6 +20,7 @@ import (
 	cafeRole3 "cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
+	"cafe/internal/controller/reply"
 	handler2 "cafe/internal/deco/handler"
 	ban3 "cafe/internal/repository/ban"
 	cafe3 "cafe/internal/repository/cafe"
@@ -30,12 +33,16 @@ import (
 	"cafe/internal/service/cafeRole"
 	member2 "cafe/internal/service/member"
 	memberRole2 "cafe/internal/service/memberRole"
+	reply2 "cafe/internal/service/reply"
 	"github.com/gorilla/mux"
 	"net/http"
 )
 
 func main() {
 	r := mux.NewRouter()
+
+	replyHandler := getReplyHandler()
+	r.PathPrefix("/cafes/{cafeId:[0-9]+}/replies").Handler(replyHandler)
 
 	boardH := getBoardHandler()
 	r.PathPrefix("/cafes/{cafeId:[0-9]+}/boards").Handler(boardH)
@@ -82,9 +89,14 @@ var roleController = cafeRole3.NewController(cafeRole.NewService(cafeRole2.NewRe
 var memberRoleController = memberRole.NewController(memberRole2.NewService(memberRole3.NewRequester()))
 var boardActionController = boardAction.NewController(boardAction2.NewService(boardAction3.NewRequester()))
 var boardController = board.NewController(board2.NewService(board3.NewRequester()))
+var replyController = reply.NewController(reply2.NewService(reply3.NewRequester()))
+
+func getReplyHandler() http.Handler {
+	return reply4.NewHandler(replyController)
+}
 
 func getBoardHandler() http.Handler {
-	return board4.NewHandler(boardController, memberController)
+	return board4.NewHandler(boardController, memberController, roleController)
 }
 
 func getBoardActionHandler() http.Handler {
