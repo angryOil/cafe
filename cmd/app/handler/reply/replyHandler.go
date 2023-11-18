@@ -24,6 +24,7 @@ func NewHandler(mCon member.Controller, c reply.Controller) http.Handler {
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{boardId:[0-9]+}", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/cnt", h.getCount).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{boardId:[0-9]+}", h.create).Methods(http.MethodPost)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{replyId:[0-9]+}", h.delete).Methods(http.MethodDelete)
 	return r
 }
 
@@ -134,6 +135,26 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	//cafeId, err := strconv.Atoi(vars["cafeId"])
+	//if err != nil {
+	//	http.Error(w, InvalidCafeId, http.StatusBadRequest)
+	//	return
+	//}
+	replyId, err := strconv.Atoi(vars["replyId"])
+	if err != nil {
+		http.Error(w, InvalidBoardId, http.StatusBadRequest)
+		return
+	}
+
+	err = h.c.Delete(r.Context(), replyId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func stringToIntArr(s string) []int {

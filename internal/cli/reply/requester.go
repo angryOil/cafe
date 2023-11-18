@@ -127,6 +127,29 @@ func (r Requester) Create(ctx context.Context, c req.Create) error {
 	return nil
 }
 
+func (r Requester) Delete(ctx context.Context, replyId int) error {
+	reqUrl := fmt.Sprintf("%s/%d", baseUrl, replyId)
+	re, err := http.NewRequest("DELETE", reqUrl, nil)
+	if err != nil {
+		log.Println("Delete NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Delete DefaultClient err: ", err)
+		return errors.New(InternalServerError)
+	}
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Delete readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
+
 func arrayToString(a []int, delim string) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
