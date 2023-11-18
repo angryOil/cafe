@@ -150,6 +150,40 @@ func (r Requester) Delete(ctx context.Context, replyId int) error {
 	return nil
 }
 
+func (r Requester) Patch(ctx context.Context, p req.Patch) error {
+	reqUrl := fmt.Sprintf("%s/%d", baseUrl, p.Id)
+	dto := p.ToPatchDto()
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(dto)
+	if err != nil {
+		log.Println("Patch NewEncoder err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	re, err := http.NewRequest("PATCH", reqUrl, &buf)
+	if err != nil {
+		log.Println("Patch NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Patch DefaultClient err: ", err)
+		return errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Patch readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
+}
+
 func arrayToString(a []int, delim string) string {
 	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }

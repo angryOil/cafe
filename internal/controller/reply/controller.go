@@ -63,3 +63,11 @@ func (c Controller) Delete(ctx context.Context, replyId int) error {
 	err := c.s.Delete(ctx, replyId)
 	return err
 }
+
+func (c Controller) Patch(ctx context.Context, replyId int, p req.Patch) error {
+	err := c.s.Patch(ctx, req2.Patch{
+		Id:      replyId,
+		Content: p.Content,
+	})
+	return err
+}

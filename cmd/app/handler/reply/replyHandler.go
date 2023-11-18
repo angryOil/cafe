@@ -25,10 +25,12 @@ func NewHandler(mCon member.Controller, c reply.Controller) http.Handler {
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/cnt", h.getCount).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{boardId:[0-9]+}", h.create).Methods(http.MethodPost)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{replyId:[0-9]+}", h.delete).Methods(http.MethodDelete)
+	r.HandleFunc("/cafes/{cafeId:[0-9]+}/replies/{replyId:[0-9]+}", h.patch).Methods(http.MethodPatch)
 	return r
 }
 
 const (
+	InvalidReplyId         = "invalid reply id"
 	InvalidCafeId          = "invalid cafe id"
 	YouDoNotHavePermission = "You do not have permission"
 	InvalidUserId          = "invalid user id"
@@ -146,13 +148,39 @@ func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
 	//}
 	replyId, err := strconv.Atoi(vars["replyId"])
 	if err != nil {
-		http.Error(w, InvalidBoardId, http.StatusBadRequest)
+		http.Error(w, InvalidReplyId, http.StatusBadRequest)
 		return
 	}
 
 	err = h.c.Delete(r.Context(), replyId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	//cafeId, err := strconv.Atoi(vars["cafeId"])
+	//if err != nil {
+	//	http.Error(w, InvalidCafeId, http.StatusBadRequest)
+	//	return
+	//}
+	replyId, err := strconv.Atoi(vars["replyId"])
+	if err != nil {
+		http.Error(w, InvalidReplyId, http.StatusBadRequest)
+		return
+	}
+
+	var p req.Patch
+	err = json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	err = h.c.Patch(r.Context(), replyId, p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 }

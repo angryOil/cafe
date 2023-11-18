@@ -77,3 +77,21 @@ func (s Service) Delete(ctx context.Context, replyId int) error {
 	err := s.r.Delete(ctx, replyId)
 	return err
 }
+
+func (s Service) Patch(ctx context.Context, p req2.Patch) error {
+	id := p.Id
+	content := p.Content
+	err := reply2.NewBuilder().
+		Id(id).
+		Content(content).
+		Build().ValidUpdate()
+	if err != nil {
+		return err
+	}
+
+	err = s.r.Patch(ctx, req.Patch{
+		Id:      id,
+		Content: content,
+	})
+	return err
+}
