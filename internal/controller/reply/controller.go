@@ -1,8 +1,10 @@
 package reply
 
 import (
+	"cafe/internal/controller/reply/req"
 	"cafe/internal/controller/reply/res"
 	"cafe/internal/service/reply"
+	req2 "cafe/internal/service/reply/req"
 	"context"
 )
 
@@ -45,4 +47,14 @@ func (c Controller) GetCount(ctx context.Context, arr []int) ([]res.GetCount, er
 		}
 	}
 	return dto, nil
+}
+
+func (c Controller) Create(ctx context.Context, cafeId int, boardId int, memberId int, create req.Create) error {
+	err := c.s.Create(ctx, req2.Create{
+		BoardId: boardId,
+		CafeId:  cafeId,
+		Writer:  memberId,
+		Content: create.Content,
+	})
+	return err
 }

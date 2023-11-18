@@ -92,7 +92,7 @@ var boardController = board.NewController(board2.NewService(board3.NewRequester(
 var replyController = reply.NewController(reply2.NewService(reply3.NewRequester()))
 
 func getReplyHandler() http.Handler {
-	return reply4.NewHandler(replyController)
+	return reply4.NewHandler(memberController, replyController)
 }
 
 func getBoardHandler() http.Handler {

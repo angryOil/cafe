@@ -1,7 +1,9 @@
 package reply
 
 import (
+	"bytes"
 	"cafe/internal/cli/reply/model"
+	"cafe/internal/cli/reply/req"
 	"cafe/internal/domain/reply"
 	"context"
 	"encoding/json"
@@ -90,6 +92,39 @@ func (r Requester) GetCount(ctx context.Context, arr []int) ([]model.GetCount, e
 		return []model.GetCount{}, errors.New(InternalServerError)
 	}
 	return countListDto.Content, nil
+}
+
+func (r Requester) Create(ctx context.Context, c req.Create) error {
+	reqUrl := fmt.Sprintf("%s/%d/%d", baseUrl, c.CafeId, c.BoardId)
+	dto := c.ToCreateDto()
+	var buf bytes.Buffer
+	err := json.NewEncoder(&buf).Encode(dto)
+	if err != nil {
+		log.Println("Crete json.NewEncoder err: ", err)
+		return errors.New(InternalServerError)
+	}
+	re, err := http.NewRequest("POST", reqUrl, &buf)
+	if err != nil {
+		log.Println("Create NewRequest err: ", err)
+		return errors.New(InternalServerError)
+	}
+
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("Create DefaultClient.Do err: ", err)
+		return errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("Create readBody err: ", err)
+			return errors.New(InternalServerError)
+		}
+		return errors.New(string(readBody))
+	}
+	return nil
 }
 
 func arrayToString(a []int, delim string) string {

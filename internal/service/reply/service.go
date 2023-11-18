@@ -2,6 +2,9 @@ package reply
 
 import (
 	"cafe/internal/cli/reply"
+	"cafe/internal/cli/reply/req"
+	reply2 "cafe/internal/domain/reply"
+	req2 "cafe/internal/service/reply/req"
 	"cafe/internal/service/reply/res"
 	"context"
 )
@@ -46,4 +49,26 @@ func (s Service) GetCount(ctx context.Context, arr []int) ([]res.GetCount, error
 		}
 	}
 	return dto, nil
+}
+
+func (s Service) Create(ctx context.Context, c req2.Create) error {
+	writer, boardId, cafeId := c.Writer, c.BoardId, c.CafeId
+	content := c.Content
+	err := reply2.NewBuilder().
+		CafeId(cafeId).
+		BoardId(boardId).
+		Writer(writer).
+		Content(content).
+		Build().ValidCreate()
+	if err != nil {
+		return err
+	}
+
+	err = s.r.Create(ctx, req.Create{
+		BoardId: boardId,
+		CafeId:  cafeId,
+		Writer:  writer,
+		Content: content,
+	})
+	return err
 }
