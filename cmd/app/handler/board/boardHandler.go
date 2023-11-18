@@ -4,6 +4,7 @@ import (
 	"cafe/internal/controller/board"
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
+	"cafe/internal/controller/cafeRole"
 	"cafe/internal/controller/member"
 	"cafe/internal/page"
 	"encoding/json"
@@ -16,9 +17,10 @@ import (
 type Handler struct {
 	c    board.Controller
 	mCon member.Controller
+	rCon cafeRole.Controller
 }
 
-func NewHandler(c board.Controller, mCon member.Controller) http.Handler {
+func NewHandler(c board.Controller, mCon member.Controller, rCon cafeRole.Controller) http.Handler {
 	r := mux.NewRouter()
 	h := Handler{c: c, mCon: mCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
