@@ -10,6 +10,10 @@ type Service struct {
 	r reply.Requester
 }
 
+func NewService(r reply.Requester) Service {
+	return Service{r: r}
+}
+
 func (s Service) GetList(ctx context.Context, boardId int) ([]res.GetList, int, error) {
 	domains, total, err := s.r.GetList(ctx, boardId)
 	if err != nil {
@@ -29,6 +33,17 @@ func (s Service) GetList(ctx context.Context, boardId int) ([]res.GetList, int, 
 	return dto, total, nil
 }
 
-func NewService(r reply.Requester) Service {
-	return Service{r: r}
+func (s Service) GetCount(ctx context.Context, arr []int) ([]res.GetCount, error) {
+	list, err := s.r.GetCount(ctx, arr)
+	if err != nil {
+		return []res.GetCount{}, err
+	}
+	dto := make([]res.GetCount, len(list))
+	for i, l := range list {
+		dto[i] = res.GetCount{
+			BoardId:    l.BoardId,
+			ReplyCount: l.ReplyCount,
+		}
+	}
+	return dto, nil
 }

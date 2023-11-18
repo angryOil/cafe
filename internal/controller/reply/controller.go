@@ -31,3 +31,18 @@ func (c Controller) GetList(ctx context.Context, boardId int) ([]res.GetList, in
 	}
 	return dto, total, nil
 }
+
+func (c Controller) GetCount(ctx context.Context, arr []int) ([]res.GetCount, error) {
+	list, err := c.s.GetCount(ctx, arr)
+	if err != nil {
+		return []res.GetCount{}, err
+	}
+	dto := make([]res.GetCount, len(list))
+	for i, l := range list {
+		dto[i] = res.GetCount{
+			BoardId:    l.BoardId,
+			ReplyCount: l.ReplyCount,
+		}
+	}
+	return dto, nil
+}

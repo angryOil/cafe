@@ -10,6 +10,15 @@ type Reply struct {
 	LastUpdatedAt string `json:"last_updated_at,omitempty"`
 }
 
+type GetCount struct {
+	BoardId    int `json:"board_id"`
+	ReplyCount int `json:"reply_count"`
+}
+
+type CountListDto struct {
+	Content []GetCount `json:"content"`
+}
+
 type ListTotalDto struct {
 	Content []Reply `json:"content"`
 	Total   int     `json:"total"`

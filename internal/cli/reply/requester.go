@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var baseUrl = "http://localhost:8090/replies"
@@ -56,4 +57,41 @@ func (r Requester) GetList(ctx context.Context, boardId int) ([]reply.Reply, int
 		return []reply.Reply{}, 0, errors.New(InternalServerError)
 	}
 	return model.ToDomainList(listTotalDto.Content), listTotalDto.Total, nil
+}
+
+func (r Requester) GetCount(ctx context.Context, arr []int) ([]model.GetCount, error) {
+	str := arrayToString(arr, ",")
+	reqUrl := fmt.Sprintf("%s/cnt?board-ids=%s", baseUrl, str)
+	re, err := http.NewRequest("GET", reqUrl, nil)
+	if err != nil {
+		log.Println("GetCount NewRequest err: ", err)
+		return []model.GetCount{}, errors.New(InternalServerError)
+	}
+	resp, err := http.DefaultClient.Do(re)
+	if err != nil {
+		log.Println("GetCount http.DefaultClient.Do err: ", err)
+		return []model.GetCount{}, errors.New(InternalServerError)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		readBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Println("GetCount readBody err: ", err)
+			return []model.GetCount{}, errors.New(InternalServerError)
+		}
+		return []model.GetCount{}, errors.New(string(readBody))
+	}
+
+	var countListDto model.CountListDto
+	err = json.NewDecoder(resp.Body).Decode(&countListDto)
+	if err != nil {
+		log.Println("GetCount json.NewDecoder err: ", err)
+		return []model.GetCount{}, errors.New(InternalServerError)
+	}
+	return countListDto.Content, nil
+}
+
+func arrayToString(a []int, delim string) string {
+	return strings.Trim(strings.Replace(fmt.Sprint(a), " ", delim, -1), "[]")
 }
