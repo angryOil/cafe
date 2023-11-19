@@ -96,7 +96,7 @@ func getReplyHandler() http.Handler {
 }
 
 func getBoardHandler() http.Handler {
-	return board4.NewHandler(boardController, memberController, roleController)
+	return board4.NewHandler(boardController, memberController, cafeController)
 }
 
 func getBoardActionHandler() http.Handler {

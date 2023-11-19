@@ -4,7 +4,7 @@ import (
 	"cafe/internal/controller/board"
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
-	"cafe/internal/controller/cafeRole"
+	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
 	"cafe/internal/page"
 	"encoding/json"
@@ -15,14 +15,14 @@ import (
 )
 
 type Handler struct {
-	c    board.Controller
-	mCon member.Controller
-	rCon cafeRole.Controller
+	c       board.Controller
+	cafeCon cafe.Controller
+	mCon    member.Controller
 }
 
-func NewHandler(c board.Controller, mCon member.Controller, rCon cafeRole.Controller) http.Handler {
+func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller) http.Handler {
 	r := mux.NewRouter()
-	h := Handler{c: c, mCon: mCon}
+	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
@@ -156,6 +156,7 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 글작성자이거나 카페 주인만 삭제 가능
 func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
@@ -173,12 +174,37 @@ func (h Handler) delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, InvalidUserId, http.StatusUnauthorized)
 		return
 	}
+	ownerId, err := h.cafeCon.GetOwnerId(r.Context(), cafeId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// 카페 주인일경우 삭제 요청
+	if userId == ownerId {
+		err = h.c.Delete(r.Context(), id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		return
+	}
+
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	log.Println("my", mInfo)
+	// 작성자가 맞을경우 삭제 아닐경우 삭제 불가
+	detail, err := h.c.GetDetail(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if detail.Writer != mInfo.Id {
+		http.Error(w, YouDonHavePermission, http.StatusForbidden)
+		return
+	}
 	err = h.c.Delete(r.Context(), id)
 
 	if err != nil {
