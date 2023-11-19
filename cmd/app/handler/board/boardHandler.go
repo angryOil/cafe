@@ -119,6 +119,7 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
+// 글쓴이만 수정 가능하게
 func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
@@ -139,6 +140,17 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	detail, err := h.c.GetDetail(r.Context(), id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if detail.Writer != mInfo.Id {
+		http.Error(w, YouDonHavePermission, http.StatusForbidden)
 		return
 	}
 
