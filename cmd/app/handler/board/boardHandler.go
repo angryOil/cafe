@@ -138,6 +138,10 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+	if mInfo.Id < 1 {
+		http.Error(w, YouDonHavePermission, http.StatusForbidden)
+		return
+	}
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -148,7 +152,11 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
+	if detail.Writer < 1 {
+		http.Error(w, InvalidId, http.StatusNotFound)
+		return
+	}
+	// 작성 자가 아닐경우
 	if detail.Writer != mInfo.Id {
 		http.Error(w, YouDonHavePermission, http.StatusForbidden)
 		return
