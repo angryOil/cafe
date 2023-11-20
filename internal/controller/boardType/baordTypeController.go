@@ -57,3 +57,15 @@ func (c Controller) Delete(ctx context.Context, cafeId int, typeId int) error {
 	err := c.s.Delete(ctx, cafeId, typeId)
 	return err
 }
+
+func (c Controller) GetDetail(ctx context.Context, cafeId int, id int) (res.BoardTypeDetailDto, error) {
+	d, err := c.s.GetDetail(ctx, cafeId, id)
+	if err != nil {
+		return res.BoardTypeDetailDto{}, err
+	}
+	return res.BoardTypeDetailDto{
+		Id:          d.Id,
+		Name:        d.Name,
+		Description: d.Description,
+	}, nil
+}

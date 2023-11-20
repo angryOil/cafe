@@ -81,3 +81,16 @@ func (s Service) Delete(ctx context.Context, cafeId int, typeId int) error {
 	err := s.r.Delete(ctx, cafeId, typeId)
 	return err
 }
+
+func (s Service) GetDetail(ctx context.Context, cafeId int, id int) (res.GetDetail, error) {
+	d, err := s.r.GetDetail(ctx, cafeId, id)
+	if err != nil {
+		return res.GetDetail{}, err
+	}
+	v := d.ToInfo()
+	return res.GetDetail{
+		Id:          v.Id,
+		Name:        v.Name,
+		Description: v.Description,
+	}, nil
+}

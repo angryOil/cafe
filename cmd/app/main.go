@@ -4,6 +4,7 @@ import (
 	"cafe/cmd/app/handler"
 	board4 "cafe/cmd/app/handler/board"
 	boardAction4 "cafe/cmd/app/handler/boardAction"
+	boardType4 "cafe/cmd/app/handler/boardType"
 	reply4 "cafe/cmd/app/handler/reply"
 	board3 "cafe/internal/cli/board"
 	boardAction3 "cafe/internal/cli/boardAction"
@@ -112,7 +113,7 @@ func getRoleHandler() http.Handler {
 }
 
 func getBoardTypeHandler() http.Handler {
-	return handler.NewBoardTypeHandler(boardTypeController, cafeController)
+	return boardType4.NewBoardTypeHandler(boardTypeController, cafeController)
 }
 
 func getBandHandler() http.Handler {

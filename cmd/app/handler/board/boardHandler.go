@@ -4,8 +4,10 @@ import (
 	"cafe/internal/controller/board"
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
+	"cafe/internal/controller/boardAction"
 	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
+	"cafe/internal/controller/memberRole"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -15,9 +17,11 @@ import (
 )
 
 type Handler struct {
-	c       board.Controller
-	cafeCon cafe.Controller
-	mCon    member.Controller
+	c          board.Controller
+	cafeCon    cafe.Controller
+	mCon       member.Controller
+	mRoleCon   memberRole.Controller
+	bActionCon boardAction.Controller
 }
 
 func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller) http.Handler {
