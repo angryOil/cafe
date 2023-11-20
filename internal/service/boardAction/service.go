@@ -29,25 +29,18 @@ func (s Service) GetInfo(ctx context.Context, cafeId, boardTypeId int) (res.GetI
 		BoardTypeId: v.BoardTypeId,
 		ReadRoles:   v.ReadRoles,
 		CreateRoles: v.CreateRoles,
-		UpdateRoles: v.UpdateRoles,
-		UpdateAble:  v.UpdateAble,
-		DeleteRoles: v.DeleteRoles,
 	}, nil
 }
 
 func (s Service) Create(ctx context.Context, c req2.Create) error {
 	cafeId, boardType := c.CafeId, c.BoardType
-	readRoles, createRoles, updateRoles, deleteRoles := c.ReadRoles, c.CreateRoles, c.UpdateRoles, c.DeleteRoles
-	updateAble := c.UpdateAble
+	readRoles, createRoles := c.ReadRoles, c.CreateRoles
 
 	err := boardAction2.NewBuilder().
 		CafeId(cafeId).
 		BoardTypeId(boardType).
 		ReadRoles(readRoles).
 		CreateRoles(createRoles).
-		UpdateRoles(updateRoles).
-		UpdateAble(updateAble).
-		DeleteRoles(deleteRoles).
 		Build().ValidCreate()
 	if err != nil {
 		return err
@@ -58,17 +51,13 @@ func (s Service) Create(ctx context.Context, c req2.Create) error {
 		BoardType:   boardType,
 		ReadRoles:   readRoles,
 		CreateRoles: createRoles,
-		UpdateRoles: updateRoles,
-		UpdateAble:  updateAble,
-		DeleteRoles: deleteRoles,
 	})
 	return err
 }
 
 func (s Service) Patch(ctx context.Context, p req2.Patch) error {
 	id, cafeId, boardTypeId := p.Id, p.CafeId, p.BoardTypeId
-	readRoles, createRoles, updateRoles, deleteRoles := p.ReadRoles, p.CreateRoles, p.UpdateRoles, p.DeleteRoles
-	updateAble := p.UpdateAble
+	readRoles, createRoles := p.ReadRoles, p.CreateRoles
 
 	err := boardAction2.NewBuilder().
 		Id(id).
@@ -76,9 +65,6 @@ func (s Service) Patch(ctx context.Context, p req2.Patch) error {
 		BoardTypeId(boardTypeId).
 		ReadRoles(readRoles).
 		CreateRoles(createRoles).
-		UpdateRoles(updateRoles).
-		UpdateAble(updateAble).
-		DeleteRoles(deleteRoles).
 		Build().ValidUpdate()
 	if err != nil {
 		return err
@@ -90,9 +76,6 @@ func (s Service) Patch(ctx context.Context, p req2.Patch) error {
 		BoardTypeId: boardTypeId,
 		ReadRoles:   readRoles,
 		CreateRoles: createRoles,
-		UpdateRoles: updateRoles,
-		UpdateAble:  updateAble,
-		DeleteRoles: deleteRoles,
 	})
 	return err
 }

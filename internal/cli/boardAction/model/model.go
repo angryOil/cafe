@@ -20,8 +20,5 @@ func (b BoardAction) ToDomain() boardAction.BoardAction {
 		BoardTypeId(b.BoardTypeId).
 		ReadRoles(b.ReadRoles).
 		CreateRoles(b.CreateRoles).
-		UpdateRoles(b.UpdateRoles).
-		UpdateAble(b.UpdateAble).
-		DeleteRoles(b.DeleteRoles).
 		Build()
 }

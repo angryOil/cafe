@@ -12,9 +12,6 @@ type Builder interface {
 	BoardTypeId(boardTypeId int) Builder
 	ReadRoles(readRoles string) Builder
 	CreateRoles(createRoles string) Builder
-	UpdateRoles(updateRoles string) Builder
-	UpdateAble(updateAble bool) Builder
-	DeleteRoles(deleteRoles string) Builder
 
 	Build() BoardAction
 }
@@ -55,21 +52,6 @@ func (b *builder) CreateRoles(createRoles string) Builder {
 	return b
 }
 
-func (b *builder) UpdateRoles(updateRoles string) Builder {
-	b.updateRoles = updateRoles
-	return b
-}
-
-func (b *builder) UpdateAble(updateAble bool) Builder {
-	b.updateAble = updateAble
-	return b
-}
-
-func (b *builder) DeleteRoles(deleteRoles string) Builder {
-	b.deleteRoles = deleteRoles
-	return b
-}
-
 func (b *builder) Build() BoardAction {
 	return &boardAction{
 		id:          b.id,
@@ -77,8 +59,5 @@ func (b *builder) Build() BoardAction {
 		boardTypeId: b.boardTypeId,
 		readRoles:   b.readRoles,
 		createRoles: b.createRoles,
-		updateRoles: b.updateRoles,
-		updateAble:  b.updateAble,
-		deleteRoles: b.deleteRoles,
 	}
 }

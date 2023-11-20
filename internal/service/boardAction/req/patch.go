@@ -6,7 +6,4 @@ type Patch struct {
 	BoardTypeId int
 	ReadRoles   string
 	CreateRoles string
-	UpdateRoles string
-	UpdateAble  bool
-	DeleteRoles string
 }

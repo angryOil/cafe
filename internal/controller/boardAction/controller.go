@@ -27,9 +27,6 @@ func (c Controller) GetInfo(ctx context.Context, cafeId, boardTypeId int) (res.G
 		BoardTypeId: d.BoardTypeId,
 		ReadRoles:   d.ReadRoles,
 		CreateRoles: d.CreateRoles,
-		UpdateRoles: d.UpdateRoles,
-		UpdateAble:  d.UpdateAble,
-		DeleteRoles: d.DeleteRoles,
 	}, nil
 }
 
@@ -39,9 +36,6 @@ func (c Controller) Create(ctx context.Context, cafeId int, boardTypeId int, d r
 		BoardType:   boardTypeId,
 		ReadRoles:   d.ReadRoles,
 		CreateRoles: d.CreateRoles,
-		UpdateRoles: d.UpdateRoles,
-		UpdateAble:  d.UpdateAble,
-		DeleteRoles: d.DeleteRoles,
 	})
 	return err
 }
@@ -53,9 +47,6 @@ func (c Controller) Patch(ctx context.Context, cafeId int, boardTypeId int, id i
 		BoardTypeId: boardTypeId,
 		ReadRoles:   p.ReadRoles,
 		CreateRoles: p.CreateRoles,
-		UpdateRoles: p.UpdateRoles,
-		UpdateAble:  p.UpdateAble,
-		DeleteRoles: p.DeleteRoles,
 	})
 	return err
 }
