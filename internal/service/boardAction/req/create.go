@@ -5,7 +5,4 @@ type Create struct {
 	BoardType   int
 	ReadRoles   string
 	CreateRoles string
-	UpdateRoles string
-	UpdateAble  bool
-	DeleteRoles string
 }
