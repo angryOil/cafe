@@ -8,6 +8,7 @@ import (
 	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
+	"cafe/internal/controller/reply"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -23,11 +24,12 @@ type Handler struct {
 	mCon       member.Controller
 	mRoleCon   memberRole.Controller
 	bActionCon boardAction.Controller
+	replyCon   reply.Controller
 }
 
-func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller, mRoleCon memberRole.Controller, bActionCon boardAction.Controller) http.Handler {
+func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller, mRoleCon memberRole.Controller, bActionCon boardAction.Controller, replyCon reply.Controller) http.Handler {
 	r := mux.NewRouter()
-	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon, mRoleCon: mRoleCon, bActionCon: bActionCon}
+	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon, mRoleCon: mRoleCon, bActionCon: bActionCon, replyCon: replyCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
@@ -42,7 +44,7 @@ const (
 	InvalidId            = "invalid board id"
 	InvalidMember        = "invalid member"
 	YouDonHavePermission = "You do not have permission"
-	BoardNotFound        = "board not found"
+	NotFound             = "board not found"
 	InvalidCafeId        = "invalid cafe id"
 	InvalidBoardType     = "invalid board type"
 	InternalServerError  = "internal server error"
@@ -87,10 +89,42 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	listTotalDto := res.ListTotalDto{
-		Content: list,
-		Total:   total,
+
+	boardIdArr := make([]int, len(list))
+	for i, info := range list {
+		boardIdArr[i] = info.Id
 	}
+
+	cntList, err := h.replyCon.GetCount(r.Context(), boardIdArr)
+	var listTotalDto res.ListTotalDto
+	if err != nil {
+		listTotalDto = res.ListTotalDto{
+			Content: list,
+			Total:   total,
+		}
+	} else {
+		boardMap := make(map[int]res.Info, len(list))
+		for _, info := range list {
+			boardMap[info.Id] = info
+		}
+		cntMap := make(map[int]int, len(cntList))
+		for _, c := range cntList {
+			cntMap[c.BoardId] = c.ReplyCount
+		}
+
+		for _, b := range boardMap {
+			boardMap[b.Id] = b.SetReplyCnt(cntMap[b.Id])
+		}
+		setReplyCntBoardList := make([]res.Info, 0, len(list))
+		for _, b := range boardMap {
+			setReplyCntBoardList = append(setReplyCntBoardList, b)
+		}
+		listTotalDto = res.ListTotalDto{
+			Content: setReplyCntBoardList,
+			Total:   total,
+		}
+	}
+
 	data, err := json.Marshal(listTotalDto)
 	if err != nil {
 		log.Println("getList json.Marshal err: ", err)
@@ -305,13 +339,13 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto, err := h.c.GetDetail(r.Context(), id)
+	foundBoard, err := h.c.GetDetail(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if dto.Id < 1 {
-		http.Error(w, BoardNotFound, http.StatusNotFound)
+	if foundBoard.Id < 1 {
+		http.Error(w, NotFound, http.StatusNotFound)
 		return
 	}
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
@@ -329,7 +363,7 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, dto.BoardType)
+	aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, foundBoard.BoardType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -342,7 +376,25 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, YouDonHavePermission, http.StatusForbidden)
 		return
 	}
-	data, err := json.Marshal(dto)
+	replies, replyCnt, err := h.replyCon.GetList(r.Context(), foundBoard.Id)
+	var data []byte
+	if err != nil {
+		data, err = json.Marshal(foundBoard)
+	} else {
+		repliesDto := make([]res.Reply, len(replies))
+		for i, r := range replies {
+			repliesDto[i] = res.Reply{
+				Id:            r.Id,
+				Writer:        r.Writer,
+				Content:       r.Content,
+				CreatedAt:     r.CreatedAt,
+				LastUpdatedAt: r.LastUpdatedAt,
+			}
+		}
+		foundBoard.SetReplies(repliesDto, replyCnt)
+		data, err = json.Marshal(foundBoard)
+	}
+
 	if err != nil {
 		log.Println("getDetail json.Marshal err: ", err)
 		http.Error(w, InternalServerError, http.StatusInternalServerError)
