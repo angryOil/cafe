@@ -110,6 +110,15 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
+
+	var c req.Create
+	err = json.NewDecoder(r.Body).Decode(&c)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	boardType, err := strconv.Atoi(vars["boardType"])
 	if err != nil {
 		http.Error(w, InvalidBoardType, http.StatusBadRequest)
@@ -120,14 +129,39 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, InternalServerError, http.StatusInternalServerError)
 		return
 	}
-	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+
+	ownerId, err := h.cafeCon.GetOwnerId(r.Context(), cafeId)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	var c req.Create
-	err = json.NewDecoder(r.Body).Decode(&c)
 
+	if userId != ownerId {
+		mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		mRole, err := h.mRoleCon.GetOneMemberRoles(r.Context(), cafeId, mInfo.Id)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, boardType)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		mRoleArr := stringToIntArr(mRole.CafeRoleIds)
+		createRoleArr := stringToIntArr(aInfo.CreateRoles)
+		createAble := checkContainIntArrToIntArr(mRoleArr, createRoleArr)
+		if !createAble {
+			http.Error(w, YouDonHavePermission, http.StatusForbidden)
+			return
+		}
+	}
+
+	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -319,8 +353,8 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkContainIntArrToIntArr(arr1 []int, arr2 []int) bool {
-	for a1 := range arr1 {
-		for a2 := range arr2 {
+	for _, a1 := range arr1 {
+		for _, a2 := range arr2 {
 			if a1 == a2 {
 				return true
 			}
