@@ -5,7 +5,6 @@ import (
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
 	"cafe/internal/controller/boardAction"
-	"cafe/internal/controller/boardType"
 	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
@@ -23,12 +22,11 @@ type Handler struct {
 	mCon       member.Controller
 	mRoleCon   memberRole.Controller
 	bActionCon boardAction.Controller
-	bTypeCon   boardType.Controller
 }
 
-func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller) http.Handler {
+func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller, mRoleCon memberRole.Controller, bActionCon boardAction.Controller) http.Handler {
 	r := mux.NewRouter()
-	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon}
+	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon, mRoleCon: mRoleCon, bActionCon: bActionCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
@@ -48,17 +46,30 @@ const (
 	InternalServerError  = "internal server error"
 )
 
-// 관리자 인가? 관리자일 경우 모든 메소드 허용 cafeCon
-// 회원인가? 회원이 아닐경우 거부 memberCon
-// 권한이 있는가? BoardAction + memberRole 을 비교해서 확인
+// member 일경우 리스트는 조회가능 (제목 까지는 조회가능)
 
 func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, InvalidUserId, http.StatusUnauthorized)
+		return
+	}
 	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
 		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
+	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+	if err != nil {
+		http.Error(w, InternalServerError, http.StatusInternalServerError)
+		return
+	}
+	if mInfo.Id < 1 {
+		http.Error(w, InvalidMember, http.StatusUnauthorized)
+		return
+	}
+
 	reqPage := page.GetPageReqByRequest(r)
 	q := r.URL.Query()
 	boardType, err := strconv.Atoi(q.Get("board-type"))
@@ -88,6 +99,8 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 	w.Write(data)
 }
 
+// cafe 주인이면 create
+// cafe 주인이 아닐경우 boardAction 과 memberRole 과 비교해서 생성 가능 여부 설정
 func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
