@@ -8,6 +8,7 @@ import (
 	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
 	"cafe/internal/controller/memberRole"
+	"cafe/internal/controller/reply"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -23,11 +24,12 @@ type Handler struct {
 	mCon       member.Controller
 	mRoleCon   memberRole.Controller
 	bActionCon boardAction.Controller
+	replyCon   reply.Controller
 }
 
-func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller, mRoleCon memberRole.Controller, bActionCon boardAction.Controller) http.Handler {
+func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller, mRoleCon memberRole.Controller, bActionCon boardAction.Controller, replyCon reply.Controller) http.Handler {
 	r := mux.NewRouter()
-	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon, mRoleCon: mRoleCon, bActionCon: bActionCon}
+	h := Handler{c: c, mCon: mCon, cafeCon: cafeCon, mRoleCon: mRoleCon, bActionCon: bActionCon, replyCon: replyCon}
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards", h.getList).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{id:[0-9]+}", h.getDetail).Methods(http.MethodGet)
 	r.HandleFunc("/cafes/{cafeId:[0-9]+}/boards/{boardType:[0-9]+}", h.create).Methods(http.MethodPost)
@@ -42,7 +44,7 @@ const (
 	InvalidId            = "invalid board id"
 	InvalidMember        = "invalid member"
 	YouDonHavePermission = "You do not have permission"
-	BoardNotFound        = "board not found"
+	NotFound             = "board not found"
 	InvalidCafeId        = "invalid cafe id"
 	InvalidBoardType     = "invalid board type"
 	InternalServerError  = "internal server error"
@@ -305,13 +307,13 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dto, err := h.c.GetDetail(r.Context(), id)
+	foundBoard, err := h.c.GetDetail(r.Context(), id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if dto.Id < 1 {
-		http.Error(w, BoardNotFound, http.StatusNotFound)
+	if foundBoard.Id < 1 {
+		http.Error(w, NotFound, http.StatusNotFound)
 		return
 	}
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
@@ -329,7 +331,7 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, dto.BoardType)
+	aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, foundBoard.BoardType)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -342,7 +344,25 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, YouDonHavePermission, http.StatusForbidden)
 		return
 	}
-	data, err := json.Marshal(dto)
+	replies, replyCnt, err := h.replyCon.GetList(r.Context(), foundBoard.Id)
+	var data []byte
+	if err != nil {
+		data, err = json.Marshal(foundBoard)
+	} else {
+		repliesDto := make([]res.Reply, len(replies))
+		for i, r := range replies {
+			repliesDto[i] = res.Reply{
+				Id:            r.Id,
+				Writer:        r.Writer,
+				Content:       r.Content,
+				CreatedAt:     r.CreatedAt,
+				LastUpdatedAt: r.LastUpdatedAt,
+			}
+		}
+		setRepliesBoard := foundBoard.SetReplies(repliesDto, replyCnt)
+		data, err = json.Marshal(setRepliesBoard)
+	}
+
 	if err != nil {
 		log.Println("getDetail json.Marshal err: ", err)
 		http.Error(w, InternalServerError, http.StatusInternalServerError)
