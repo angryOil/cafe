@@ -12,10 +12,9 @@ type Detail struct {
 	ReplyCnt      int     `json:"reply_cnt,omitempty"`
 }
 
-func (d Detail) SetReplies(replies []Reply, replyCnt int) Detail {
+func (d *Detail) SetReplies(replies []Reply, replyCnt int) {
 	d.Replies = replies
 	d.ReplyCnt = replyCnt
-	return d
 }
 
 type Reply struct {

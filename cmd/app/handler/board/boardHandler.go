@@ -89,10 +89,42 @@ func (h Handler) getList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	listTotalDto := res.ListTotalDto{
-		Content: list,
-		Total:   total,
+
+	boardIdArr := make([]int, len(list))
+	for i, info := range list {
+		boardIdArr[i] = info.Id
 	}
+
+	cntList, err := h.replyCon.GetCount(r.Context(), boardIdArr)
+	var listTotalDto res.ListTotalDto
+	if err != nil {
+		listTotalDto = res.ListTotalDto{
+			Content: list,
+			Total:   total,
+		}
+	} else {
+		boardMap := make(map[int]res.Info, len(list))
+		for _, info := range list {
+			boardMap[info.Id] = info
+		}
+		cntMap := make(map[int]int, len(cntList))
+		for _, c := range cntList {
+			cntMap[c.BoardId] = c.ReplyCount
+		}
+
+		for _, b := range boardMap {
+			boardMap[b.Id] = b.SetReplyCnt(cntMap[b.Id])
+		}
+		setReplyCntBoardList := make([]res.Info, 0, len(list))
+		for _, b := range boardMap {
+			setReplyCntBoardList = append(setReplyCntBoardList, b)
+		}
+		listTotalDto = res.ListTotalDto{
+			Content: setReplyCntBoardList,
+			Total:   total,
+		}
+	}
+
 	data, err := json.Marshal(listTotalDto)
 	if err != nil {
 		log.Println("getList json.Marshal err: ", err)
@@ -359,8 +391,8 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 				LastUpdatedAt: r.LastUpdatedAt,
 			}
 		}
-		setRepliesBoard := foundBoard.SetReplies(repliesDto, replyCnt)
-		data, err = json.Marshal(setRepliesBoard)
+		foundBoard.SetReplies(repliesDto, replyCnt)
+		data, err = json.Marshal(foundBoard)
 	}
 
 	if err != nil {

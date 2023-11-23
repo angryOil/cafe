@@ -7,6 +7,12 @@ type Info struct {
 	Title         string `json:"title,omitempty"`
 	CreatedAt     string `json:"created_at,omitempty"`
 	LastUpdatedAt string `json:"lastUpdated_at,omitempty"`
+	ReplyCnt      int    `json:"reply_cnt"`
+}
+
+func (i Info) SetReplyCnt(cnt int) Info {
+	i.ReplyCnt = cnt
+	return i
 }
 
 type ListTotalDto struct {
