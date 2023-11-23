@@ -4,8 +4,11 @@ import (
 	"cafe/internal/controller/board"
 	"cafe/internal/controller/board/req"
 	"cafe/internal/controller/board/res"
+	"cafe/internal/controller/boardAction"
+	"cafe/internal/controller/boardType"
 	"cafe/internal/controller/cafe"
 	"cafe/internal/controller/member"
+	"cafe/internal/controller/memberRole"
 	"cafe/internal/page"
 	"encoding/json"
 	"github.com/gorilla/mux"
@@ -15,9 +18,12 @@ import (
 )
 
 type Handler struct {
-	c       board.Controller
-	cafeCon cafe.Controller
-	mCon    member.Controller
+	c          board.Controller
+	cafeCon    cafe.Controller
+	mCon       member.Controller
+	mRoleCon   memberRole.Controller
+	bActionCon boardAction.Controller
+	bTypeCon   boardType.Controller
 }
 
 func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Controller) http.Handler {
@@ -35,6 +41,7 @@ func NewHandler(c board.Controller, mCon member.Controller, cafeCon cafe.Control
 const (
 	InvalidUserId        = "invalid user id"
 	InvalidId            = "invalid board id"
+	InvalidMember        = "invalid member"
 	YouDonHavePermission = "You do not have permission"
 	InvalidCafeId        = "invalid cafe id"
 	InvalidBoardType     = "invalid board type"
@@ -119,7 +126,7 @@ func (h Handler) create(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 }
 
-// 글쓴이만 수정 가능하게
+// 글쓴이만 수정 가능
 func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	cafeId, err := strconv.Atoi(vars["cafeId"])
@@ -140,6 +147,10 @@ func (h Handler) patch(w http.ResponseWriter, r *http.Request) {
 	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if mInfo.Id < 1 {
+		http.Error(w, InvalidMember, http.StatusForbidden)
 		return
 	}
 
