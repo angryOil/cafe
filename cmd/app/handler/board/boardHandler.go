@@ -14,6 +14,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type Handler struct {
@@ -41,6 +42,7 @@ const (
 	InvalidId            = "invalid board id"
 	InvalidMember        = "invalid member"
 	YouDonHavePermission = "You do not have permission"
+	BoardNotFound        = "board not found"
 	InvalidCafeId        = "invalid cafe id"
 	InvalidBoardType     = "invalid board type"
 	InternalServerError  = "internal server error"
@@ -253,12 +255,16 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	// 권한 확인필요
 	//cafeId, err := strconv.Atoi(vars["cafeId"])
-	_, err := strconv.Atoi(vars["cafeId"])
+	cafeId, err := strconv.Atoi(vars["cafeId"])
 	if err != nil {
 		http.Error(w, InvalidCafeId, http.StatusBadRequest)
 		return
 	}
-
+	userId, ok := r.Context().Value("userId").(int)
+	if !ok {
+		http.Error(w, InvalidUserId, http.StatusUnauthorized)
+		return
+	}
 	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
 		http.Error(w, InvalidId, http.StatusBadRequest)
@@ -270,7 +276,38 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	if dto.Id < 1 {
+		http.Error(w, BoardNotFound, http.StatusNotFound)
+		return
+	}
+	mInfo, err := h.mCon.GetMemberInfo(r.Context(), cafeId, userId)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if mInfo.Id < 1 {
+		http.Error(w, InvalidMember, http.StatusUnauthorized)
+		return
+	}
+	roles, err := h.mRoleCon.GetOneMemberRoles(r.Context(), cafeId, mInfo.Id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
+	aInfo, err := h.bActionCon.GetInfo(r.Context(), cafeId, dto.BoardType)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	readRoleIntArr := stringToIntArr(aInfo.ReadRoles)
+	mRolesIntArr := stringToIntArr(roles.CafeRoleIds)
+	readAble := checkContainIntArrToIntArr(mRolesIntArr, readRoleIntArr)
+	if !readAble {
+		http.Error(w, YouDonHavePermission, http.StatusForbidden)
+		return
+	}
 	data, err := json.Marshal(dto)
 	if err != nil {
 		log.Println("getDetail json.Marshal err: ", err)
@@ -279,4 +316,29 @@ func (h Handler) getDetail(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Content-Type", "application/json")
 	w.Write(data)
+}
+
+func checkContainIntArrToIntArr(arr1 []int, arr2 []int) bool {
+	for a1 := range arr1 {
+		for a2 := range arr2 {
+			if a1 == a2 {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func stringToIntArr(s string) []int {
+	s = strings.ReplaceAll(s, " ", "")
+	sArr := strings.Split(s, ",")
+	intArr := make([]int, 0)
+	for _, s := range sArr {
+		i, err := strconv.Atoi(s)
+		if err != nil {
+			continue
+		}
+		intArr = append(intArr, i)
+	}
+	return intArr
 }

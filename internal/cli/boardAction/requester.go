@@ -38,6 +38,7 @@ func (r Requester) GetInfo(ctx context.Context, cafeId, boardTypeId int) (boardA
 
 	resp, err := http.DefaultClient.Do(re)
 	if err != nil {
+		log.Println("GetInfo DefaultClient.Do err: ", err)
 		return boardAction.NewBuilder().Build(), errors.New(InternalServerError)
 	}
 	defer resp.Body.Close()
